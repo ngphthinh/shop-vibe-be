@@ -1,8 +1,10 @@
 package org.ngphthinh.exception;
 
+import com.sun.jdi.request.DuplicateRequestException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.ngphthinh.dto.response.ApiResponse;
 import org.ngphthinh.dto.response.ErrorResponse;
+import org.ngphthinh.exception.auth.DuplicateEmailException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -90,4 +93,32 @@ public class GlobalExceptionHandler {
         }
     }
 
+    private String mapAttribute(String message, String attributeKey, String attributeValue) {
+        if (message.contains("{" + attributeKey + "}")) {
+            return message.replace("{" + attributeKey + "}", attributeValue);
+        }
+        return message;
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateEmailException(DuplicateEmailException ex, HttpServletRequest request) {
+
+        final String KEY_ATTRIBUTE = "keyAttribute";
+
+        String message = ex.getErrorCode().getMessage();
+
+        if (Objects.nonNull(ex.getKeyAttribute()) && Objects.nonNull(ex.getAttributeValue())) {
+            message = mapAttribute(message, ex.getKeyAttribute(), ex.getAttributeValue());
+        }
+        ErrorResponse response = ErrorResponse.builder()
+                .status(ex.getErrorCode().getStatusCode().value())
+                .message(HttpStatus.valueOf(ex.getErrorCode().getStatusCode().value()).getReasonPhrase())
+                .timestamp(LocalDateTime.now())
+                .error(message)
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity
+                .status(ex.getErrorCode().getStatusCode()).body(response);
+    }
 }

@@ -24,11 +24,8 @@ import org.ngphthinh.exception.auth.TokenExpiredException;
 import org.ngphthinh.mapper.UserMapper;
 import org.ngphthinh.repository.UserRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
@@ -53,7 +50,7 @@ public class AuthenticationService {
 
     public UserResponse register(@Valid UserCreateRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateEmailException();
+            throw new DuplicateEmailException("email", request.getEmail());
         }
 
         User user = userMapper.toUser(request);

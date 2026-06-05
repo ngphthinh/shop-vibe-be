@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatusCode;
 @Getter
 public enum ErrorCode {
 
-    EMAIL_ALREADY_EXISTS(409, "Email is already exists", HttpStatus.CONFLICT),
+    EMAIL_ALREADY_EXISTS(409, "Email {email} is already exists", HttpStatus.CONFLICT),
     UNCATEGORIZED_EXCEPTION(500, "Uncategorized exception", HttpStatus.INTERNAL_SERVER_ERROR),
     GENERATE_TOKEN_FAILED(500, "Failed to generate token", HttpStatus.INTERNAL_SERVER_ERROR),
     USER_NOT_FOUND(404, "User not found", HttpStatus.NOT_FOUND),
