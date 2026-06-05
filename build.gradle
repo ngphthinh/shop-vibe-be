@@ -59,6 +59,9 @@ dependencies {
 	implementation 'org.springframework.security:spring-security-crypto'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+
+	// Fake data generator
+	implementation 'net.datafaker:datafaker:2.2.2'
 }
 compileJava {
 	options.compilerArgs = [

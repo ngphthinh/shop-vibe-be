@@ -15,7 +15,12 @@ public enum ResponseCode {
     AUTH_CHANGE_PASSWORD_SUCCESS(1003, "Successfully changed password"),
 
     AUTH_LOGOUT_SUCCESS(1004, "Successfully logged out"),
-    ;
+
+    CATEGORY_GET_SUCCESS(2000, "Successfully retrieved categories"),
+    CATEGORY_GET_BY_ID_SUCCESS(2001, "Successfully retrieved category by ID"),
+    CATEGORY_CREATE_SUCCESS(2002, "Successfully created category"),
+    CATEGORY_UPDATE_SUCCESS(2003, "Successfully updated category");
+
     private final int code;
     private final String message;
 

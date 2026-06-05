@@ -11,11 +11,14 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -103,7 +106,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateEmailException(DuplicateEmailException ex, HttpServletRequest request) {
 
-        final String KEY_ATTRIBUTE = "keyAttribute";
 
         String message = ex.getErrorCode().getMessage();
 
@@ -120,5 +122,47 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(ex.getErrorCode().getStatusCode()).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
+        {
+            ErrorCode errorCode = ErrorCode.INVALID_PARAMETER_TYPE;
+            String message = e.getMessage();
+
+
+            Class<?> errorTypeClass = e.getRequiredType();
+
+            Set<Class<?>> NUMBER_TYPES = Set.of(
+                    Byte.class, Short.class, Integer.class, Long.class,
+                    Float.class, Double.class,
+                    byte.class, short.class, int.class, long.class,
+                    float.class, double.class
+            );
+            if (errorTypeClass == null) {
+                errorTypeClass = e.getParameter().getParameterType();
+            }
+
+            if (errorTypeClass == LocalDate.class) {
+                errorCode = ErrorCode.INVALID_DATE_FORMAT;
+            } else if (NUMBER_TYPES.contains(errorTypeClass)) {
+                errorCode = ErrorCode.INVALID_NUMBER_FORMAT;
+            }
+
+            if (e.getValue() != null) {
+                message = String.format("Invalid value '%s' for parameter '%s' must be a %s", e.getValue(), e.getName(), errorTypeClass.getSimpleName());
+            }
+
+            ErrorResponse response = ErrorResponse.builder()
+                    .timestamp(LocalDateTime.now())
+                    .status(errorCode.getStatusCode().value())
+                    .error(HttpStatus.valueOf(errorCode.getStatusCode().value()).getReasonPhrase())
+                    .message(message)
+                    .path(request.getRequestURI())
+                    .build();
+
+            return ResponseEntity.status(errorCode.getStatusCode()).body(response);
+
+        }
     }
 }

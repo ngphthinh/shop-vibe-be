@@ -32,11 +32,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_ENDPOINTS = {
-            "/v1/auth/login",
-            "/v1/auth/register",
-            "/v1/auth/refresh-token",
-    };
+
 
     private static final String[] DOCS_ENDPOINTS = {
             "/swagger-ui/**",
@@ -44,6 +40,15 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/v3/api-docs",
     };
+    private static final String[] PUBLIC_ENDPOINTS_POST = {
+            "/v1/auth/login",
+            "/v1/auth/register",
+            "/v1/auth/refresh-token",
+    };
+    private static final String[] PUBLIC_ENDPOINTS_GET = {
+            "/v1/categories/**",
+    };
+
 
     private final CustomJwtDecoder customJwtDecoder;
 
@@ -54,8 +59,9 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(authorize ->
                 authorize.requestMatchers(DOCS_ENDPOINTS)
-                        .permitAll().
-                requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS_POST).permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
                         .anyRequest().authenticated()
         );
 

@@ -18,7 +18,14 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(401, "Invalid refresh token", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(403, "Unauthorized", HttpStatus.UNAUTHORIZED),
     FORBIDDEN(403, "Forbidden", HttpStatus.FORBIDDEN),
-    ACCOUNT_LOCKED(403, "Account locked", HttpStatus.FORBIDDEN);
+    ACCOUNT_LOCKED(403, "Account locked", HttpStatus.FORBIDDEN),
+    CATEGORY_ID_INVALID(400, "Category ID is invalid", HttpStatus.BAD_REQUEST),
+    CATEGORY_NOT_FOUND(404, "Category not found", HttpStatus.NOT_FOUND),
+    INVALID_PARAMETER_TYPE(400, "Invalid parameter type", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_FORMAT(400, "Invalid date format", HttpStatus.BAD_REQUEST),
+    INVALID_NUMBER_FORMAT(400, "Invalid number format", HttpStatus.BAD_REQUEST),
+    CATEGORY_HAS_PRODUCTS(400, "Category has products", HttpStatus.BAD_REQUEST),
+    CATEGORY_HAS_SUBCATEGORIES(400, "Category has subcategories", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
