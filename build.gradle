@@ -1,0 +1,74 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.6'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'org.ngphthinh'
+version = '0.0.1-SNAPSHOT'
+description = 'shop-vibe'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Core & Web
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// Databases (SQL & NoSQL)
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // Đã bao gồm Hibernate
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	runtimeOnly 'org.postgresql:postgresql'
+
+	// Swagger UI / OpenAPI Docs
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
+
+	// Lombok (Giúp generate Getter/Setter)
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// Testing (Chỉ cần 2 dòng này là cân được hết các loại test)
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// Lombok cho Test nếu bạn viết code test có dùng @Builder, @Getter...
+//	testCompileOnly 'org.projectlombok:lombok'
+//	testAnnotationProcessor 'org.projectlombok:lombok'
+	compileOnly 'org.projectlombok:lombok:1.18.32'
+	annotationProcessor 'org.projectlombok:lombok:1.18.32'
+	// --- MAPSTRUCT ---
+	implementation 'org.mapstruct:mapstruct:1.6.0.Beta1' // Hoặc phiên bản stable bạn đang dùng
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.0.Beta1'
+
+	// --- LOMBOK MAPSTRUCT BINDING (Cực kỳ quan trọng) ---
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+
+	//JWT
+	implementation 'com.nimbusds:nimbus-jose-jwt:9.48'
+
+	// Spring Security
+	implementation 'org.springframework.security:spring-security-crypto'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+}
+compileJava {
+	options.compilerArgs = [
+			'-Amapstruct.defaultComponentModel=spring'
+	]
+
+}
+tasks.withType(JavaCompile) {
+	options.compilerArgs += '-parameters'
+}
+tasks.named('test') {
+	useJUnitPlatform()
+}
