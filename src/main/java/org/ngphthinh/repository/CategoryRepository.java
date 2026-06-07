@@ -3,6 +3,7 @@ package org.ngphthinh.repository;
 import org.ngphthinh.entity.Category;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,5 +27,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     boolean existsByIdAndProductsIsEmpty(Long id);
 
     boolean existsByIdAndSubCategoriesIsEmpty(Long id);
+
+    Long findParentIdById(Long current);
 }
 

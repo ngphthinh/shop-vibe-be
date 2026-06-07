@@ -33,7 +33,6 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
 
-
     private static final String[] DOCS_ENDPOINTS = {
             "/swagger-ui/**",
             "/swagger-ui.html",
@@ -47,6 +46,7 @@ public class SecurityConfig {
     };
     private static final String[] PUBLIC_ENDPOINTS_GET = {
             "/v1/categories/**",
+            "/v1/products/**",
     };
 
 

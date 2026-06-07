@@ -16,7 +16,7 @@ import java.util.Set;
 @Setter
 @Builder
 @Table(name = "roles")
-public class Role {
+public class Role extends BaseEntity{
     @Id
     private String id;
 
@@ -26,12 +26,4 @@ public class Role {
 
     @ManyToMany(mappedBy = "roles")
     private Set<User> users;
-
-    @CreationTimestamp
-    @Column( nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 }

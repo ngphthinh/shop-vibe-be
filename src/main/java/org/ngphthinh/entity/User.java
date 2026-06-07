@@ -17,7 +17,7 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "users")
-public class User {
+public class User extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -43,14 +43,6 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isLocked = false;
-
-    @CreationTimestamp
-    @Column( nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 
 
     @ManyToMany(fetch = FetchType.EAGER)

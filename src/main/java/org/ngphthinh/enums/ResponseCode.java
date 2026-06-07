@@ -19,7 +19,13 @@ public enum ResponseCode {
     CATEGORY_GET_SUCCESS(2000, "Successfully retrieved categories"),
     CATEGORY_GET_BY_ID_SUCCESS(2001, "Successfully retrieved category by ID"),
     CATEGORY_CREATE_SUCCESS(2002, "Successfully created category"),
-    CATEGORY_UPDATE_SUCCESS(2003, "Successfully updated category");
+    CATEGORY_UPDATE_SUCCESS(2003, "Successfully updated category"),
+
+    PRODUCT_GET_SUCCESS(3000, "Successfully retrieved products"),
+    PRODUCT_GET_BY_ID_SUCCESS(3001, "Successfully retrieved product by ID"),
+    PRODUCT_CREATE_SUCCESS(3002, "Successfully created product"),
+    PRODUCT_UPDATE_SUCCESS(3003, "Successfully updated product"),
+    PRODUCT_DELETE_SUCCESS(3004, "Successfully deleted product");
 
     private final int code;
     private final String message;

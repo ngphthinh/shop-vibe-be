@@ -25,7 +25,17 @@ public enum ErrorCode {
     INVALID_DATE_FORMAT(400, "Invalid date format", HttpStatus.BAD_REQUEST),
     INVALID_NUMBER_FORMAT(400, "Invalid number format", HttpStatus.BAD_REQUEST),
     CATEGORY_HAS_PRODUCTS(400, "Category has products", HttpStatus.BAD_REQUEST),
-    CATEGORY_HAS_SUBCATEGORIES(400, "Category has subcategories", HttpStatus.BAD_REQUEST);
+    CATEGORY_HAS_SUBCATEGORIES(400, "Category has subcategories", HttpStatus.BAD_REQUEST),
+    PRODUCT_NOT_FOUND(404, "Product not found", HttpStatus.NOT_FOUND),
+    CATEGORY_NOT_LEAF(400, "Category is not a leaf node", HttpStatus.BAD_REQUEST),
+    PARENT_CATEGORY_NOT_FOUND(404, "Parent category not found", HttpStatus.NOT_FOUND),
+    CATEGORY_CIRCULAR_REFERENCE(400, "Category has circular reference", HttpStatus.BAD_REQUEST),
+    PARENT_CATEGORY_HAS_PRODUCTS(400, "Parent category has products", HttpStatus.BAD_REQUEST),
+    PRODUCT_IMAGE_NOT_FOUND(404, "Product image not found", HttpStatus.NOT_FOUND),
+    IMAGE_UPLOAD_FAILED(500, "Failed to upload image", HttpStatus.INTERNAL_SERVER_ERROR),
+    DELETE_IMAGE_FAILED(500, "Failed to delete image", HttpStatus.INTERNAL_SERVER_ERROR),
+    IMAGE_PROCESSING_FAILED(500, "Failed to process image", HttpStatus.INTERNAL_SERVER_ERROR),
+    NO_IMAGES_PROVIDED(400, "No images provided", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

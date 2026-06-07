@@ -13,6 +13,7 @@ import org.ngphthinh.exception.AppException;
 import org.ngphthinh.exception.ErrorCode;
 import org.ngphthinh.mapper.CategoryMapper;
 import org.ngphthinh.repository.CategoryRepository;
+import org.ngphthinh.repository.ProductRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +27,9 @@ public class CategoryServiceTest {
 
     @InjectMocks
     private CategoryService categoryService;
+
+    @Mock
+    private ProductRepository productRepository;
 
     @Mock
     private CategoryRepository categoryRepository;
@@ -111,6 +115,7 @@ public class CategoryServiceTest {
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(parentCategory));
         when(categoryRepository.save(any(Category.class))).thenReturn(childCategory);
         when(categoryMapper.toCategoryResponse(childCategory)).thenReturn(categoryResponseNam);
+        when(productRepository.existsByCategoryIdAndIsDeletedFalse(1L)).thenReturn(false);
 
         // WHEN
         CategoryResponse result = categoryService.createCategory(requestWithParent);
@@ -198,6 +203,7 @@ public class CategoryServiceTest {
         when(categoryRepository.findById(catId)).thenReturn(Optional.of(childCategory));
         when(categoryRepository.save(childCategory)).thenReturn(childCategory);
         when(categoryMapper.toCategoryResponse(childCategory)).thenReturn(categoryResponseNam);
+        when(productRepository.existsByCategoryIdAndIsDeletedFalse(catId)).thenReturn(false);
 
         categoryService.updateCategory(catId, requestToRoot);
 
@@ -205,4 +211,59 @@ public class CategoryServiceTest {
         assertEquals("Thời trang mới", childCategory.getName());
         verify(categoryRepository, times(1)).save(childCategory);
     }
+
+
+    @Test
+    void createCategory_failed_parentHasProducts() {
+        // GIVEN
+        when(categoryMapper.toCategory(requestWithParent.getName())).thenReturn(childCategory);
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(parentCategory));
+        when(productRepository.existsByCategoryIdAndIsDeletedFalse(1L)).thenReturn(true);
+
+        // WHEN & THEN
+        AppException exception = assertThrows(AppException.class, () -> {
+            categoryService.createCategory(requestWithParent);
+        });
+
+        assertEquals(ErrorCode.PARENT_CATEGORY_HAS_PRODUCTS, exception.getErrorCode());
+        verify(categoryRepository, never()).save(any(Category.class));
+    }
+
+    @Test
+    void updateCategory_failed_circularReference() {
+        Long catId = 2L;
+        CategoryRequest requestCircular = new CategoryRequest();
+        requestCircular.setName("Nam");
+        requestCircular.setParentCategoryId(2L); // Cố tình tạo circular reference
+
+        when(categoryRepository.findById(catId)).thenReturn(Optional.of(childCategory));
+
+        AppException exception = assertThrows(AppException.class, () -> {
+            categoryService.updateCategory(catId, requestCircular);
+        });
+
+        assertEquals(ErrorCode.CATEGORY_CIRCULAR_REFERENCE, exception.getErrorCode());
+        verify(categoryRepository, never()).save(any(Category.class));
+    }
+
+    @Test
+    void updateCategory_failed_hasProducts() {
+        Long catId = 2L;
+
+        // parentCategoryId = null →
+        CategoryRequest requestToRoot = new CategoryRequest();
+        requestToRoot.setName("Nam");
+        requestToRoot.setParentCategoryId(null);
+
+        when(categoryRepository.findById(catId)).thenReturn(Optional.of(childCategory));
+        when(productRepository.existsByCategoryIdAndIsDeletedFalse(catId)).thenReturn(true);
+
+        AppException exception = assertThrows(AppException.class, () -> {
+            categoryService.updateCategory(catId, requestToRoot);
+        });
+
+        assertEquals(ErrorCode.CATEGORY_HAS_PRODUCTS, exception.getErrorCode());
+        verify(categoryRepository, never()).save(any(Category.class));
+    }
+
 }

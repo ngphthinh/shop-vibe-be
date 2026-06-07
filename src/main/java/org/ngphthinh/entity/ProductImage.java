@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "product_images")
-public class ProductImage {
+public class ProductImage extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +27,9 @@ public class ProductImage {
     @Builder.Default
     private Boolean isPrimary = false;
 
+    @Column(unique = true, length = 100)
+    private String publicId;
+
     @Column(nullable = false)
     @Builder.Default
     private Integer sortOrder = 0;
@@ -34,11 +37,4 @@ public class ProductImage {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
-    @CreationTimestamp
-    @Column( nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 }

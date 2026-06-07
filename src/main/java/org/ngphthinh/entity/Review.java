@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(columnNames = {"user_id", "product_id"})
         }
 )
-public class Review {
+public class Review extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,11 +39,4 @@ public class Review {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
-    @CreationTimestamp
-    @Column( nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 }

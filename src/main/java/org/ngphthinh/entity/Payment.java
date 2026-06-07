@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "payments")
-public class Payment {
+public class Payment extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,6 +33,5 @@ public class Payment {
     @Column( unique = true, length = 100)
     private String transactionId;
 
-    @Column( nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+
 }

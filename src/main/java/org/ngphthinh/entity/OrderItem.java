@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @Setter
 @Entity
 @Table(name = "order_items")
-public class OrderItem {
+public class OrderItem extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,6 +34,11 @@ public class OrderItem {
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal subtotal;
+
+    @Column(nullable = false)
+    private String productName;
+
+    private String productThumbnail;
 
 
 }

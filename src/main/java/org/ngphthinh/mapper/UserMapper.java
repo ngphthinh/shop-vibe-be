@@ -18,8 +18,6 @@ public interface UserMapper {
     @Mapping(target = "address", ignore = true)
     @Mapping(target = "isActive", ignore = true)
     @Mapping(target = "isLocked", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "orders", ignore = true)

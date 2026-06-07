@@ -18,7 +18,7 @@ import java.util.Set;
 @Entity
 @Table(name = "products")
 @SQLDelete(sql = "UPDATE products SET is_deleted = true WHERE id = ?")
-public class Product {
+public class Product extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,13 +51,6 @@ public class Product {
     @Builder.Default
     private Boolean isDeleted = false;
 
-    @CreationTimestamp
-    @Column( nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ProductImage> images;

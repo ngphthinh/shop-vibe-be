@@ -48,6 +48,7 @@ public class AuthenticationService {
     private final UserClockerService userClockerService;
     private final UserService userService;
 
+    @Transactional
     public UserResponse register(@Valid UserCreateRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateEmailException("email", request.getEmail());
@@ -138,6 +139,7 @@ public class AuthenticationService {
     }
 
 
+    @Transactional
     @PreAuthorize("#request.email == authentication.name")
     public UserChangePasswordResponse changePassword(UserChangePasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
