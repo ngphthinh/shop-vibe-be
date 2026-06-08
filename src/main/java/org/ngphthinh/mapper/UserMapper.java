@@ -2,8 +2,10 @@ package org.ngphthinh.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.ngphthinh.dto.request.user.UserCreateRequest;
+import org.ngphthinh.dto.request.user.UserUpdateRequest;
 import org.ngphthinh.dto.response.user.UserResponse;
 import org.ngphthinh.entity.Role;
 import org.ngphthinh.entity.User;
@@ -12,7 +14,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = org.mapstruct.NullValuePropertyMappingStrategy.IGNORE)
+
 public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "address", ignore = true)
@@ -38,4 +41,8 @@ public interface UserMapper {
                 .map(Role::getId)
                 .collect(Collectors.toList());
     }
+
+
+    void updateUserFromUserResponse(UserUpdateRequest request, @MappingTarget User user);
+
 }

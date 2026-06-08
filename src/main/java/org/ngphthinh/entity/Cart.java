@@ -21,8 +21,8 @@ public class Cart extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+
+    @OneToOne(mappedBy = "cart", fetch = FetchType.LAZY)
     private User user;
 
     @Column(nullable = false, precision = 15, scale = 2)

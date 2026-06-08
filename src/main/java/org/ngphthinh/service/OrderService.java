@@ -236,6 +236,10 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
+        if (order.getStatus() == OrderStatus.CONFIRMED) {
+            throw new AppException(ErrorCode.ORDER_STATUS_UPDATE_FORBIDDEN);
+        }
+
         // 3. Parse và kiểm tra tính hợp lệ của Enum nhập vào
         OrderStatus newStatus;
         try {

@@ -37,7 +37,20 @@ public enum ResponseCode {
     ORDER_GET_SUCCESS(5001, "Successfully retrieved orders"),
     ORDER_GET_BY_ID_SUCCESS(5002, "Successfully retrieved order by ID"),
     ORDER_CANCEL_SUCCESS(5003, "Successfully cancelled order"),
-    ORDER_STATUS_UPDATE_SUCCESS(5004, "Successfully updated order status");
+    ORDER_STATUS_UPDATE_SUCCESS(5004, "Successfully updated order status"),
+
+    REVIEWS_RETRIEVED_SUCCESSFULLY(6000, "Successfully retrieved reviews"),
+    REVIEW_CREATED_SUCCESSFULLY(6001, "Successfully created review"),
+    REVIEW_UPDATED_SUCCESSFULLY(6002, "Successfully updated review"),
+    REVIEW_DELETED_SUCCESSFULLY(6003, "Successfully deleted review"),
+
+    USER_RETRIEVED_SUCCESSFULLY(7000, "Successfully retrieved user information"),
+    USER_UPDATED_SUCCESSFULLY(7001, "Successfully updated user information"),
+    USERS_RETRIEVED_SUCCESSFULLY(7002, "Successfully retrieved users"),
+    USER_LOCKED_SUCCESSFULLY(7003, "Successfully locked user account"),
+    USER_UNLOCKED_SUCCESSFULLY(7004, "Successfully unlocked user account")
+
+     ;
 
     private final int code;
     private final String message;

@@ -88,7 +88,7 @@ public class AuthenticationService {
             if (failedAttempts >= 5) {
                 log.warn("User {} has been locked due to too many failed login attempts", request.getEmail());
 
-                userService.lockUser(request.getEmail());
+                userService.lockAccountDueToMaxFailedAttempts(request.getEmail());
                 userClockerService.resetFailedAttempts(request.getEmail());
                 throw new AccountLockedException();
             }
@@ -109,7 +109,15 @@ public class AuthenticationService {
 
     @Transactional
     public IntrospectResponse introspect(IntrospectRequest request) {
-        return jwtService.introspect(request.getAccessToken());
+
+        IntrospectResponse introspectResponse = jwtService.introspect(request.getAccessToken());
+
+
+        if (userRepository.existsByEmailAndIsLockedTrue(introspectResponse.getSub())) {
+            throw new AccountLockedException();
+        }
+
+        return introspectResponse;
     }
 
     public AuthenticateResponse refreshToken(RefreshTokenRequest refreshToken) {
@@ -124,6 +132,10 @@ public class AuthenticationService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getIsLocked()) {
+            throw new AccountLockedException();
+        }
 
         String newAccessToken = jwtService.generateAccessToken(user);
         String newRefreshToken = jwtService.generateRefreshToken(user);

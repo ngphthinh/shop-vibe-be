@@ -7,13 +7,7 @@ import org.ngphthinh.dto.request.user.UserCreateRequest;
 import org.ngphthinh.entity.*;
 import org.ngphthinh.enums.PaymentStatus;
 import org.ngphthinh.enums.RoleName;
-import org.ngphthinh.repository.CategoryRepository;
-import org.ngphthinh.repository.CartRepository;
-import org.ngphthinh.repository.OrderItemRepository;
-import org.ngphthinh.repository.OrderRepository;
-import org.ngphthinh.repository.ProductRepository;
-import org.ngphthinh.repository.RoleRepository;
-import org.ngphthinh.repository.UserRepository;
+import org.ngphthinh.repository.*;
 import org.ngphthinh.service.AuthenticationService;
 import org.ngphthinh.enums.OrderStatus;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +37,7 @@ public class InitData implements CommandLineRunner {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ReviewRepository reviewRepository;
     @Value("${app.default-password}")
     private String defaultPassword;
     private final AuthenticationService authenticationService;
@@ -57,8 +52,81 @@ public class InitData implements CommandLineRunner {
         initProducts();
         initCart();
         initOrders();
+        initReview();
 
 
+    }
+
+    private String generateVietnameseComment(Faker faker) {
+        String[] templates = {
+                "Sản phẩm dùng rất " + faker.expression("#{options.option 'tốt','tuyệt vời','ổn định','chất lượng'} ") + faker.yoda().quote(),
+                "Giao hàng nhanh. " + faker.commerce().productName() + " dùng khá ok, đóng gói cẩn thận.",
+                "Mua lần thứ " + faker.number().numberBetween(2, 5) + " ở shop rồi. " + faker.restaurant().review(),
+                "Đáng đồng tiền bát gạo. " + faker.expression("#{options.option 'Sẽ ủng hộ shop tiếp.','Chất lượng tuyệt vời!'}"),
+                "Chất lượng sản phẩm tuyệt vời, " + faker.expression("#{options.option 'giao hàng rất nhanh','chủ shop nhiệt tình'} .")
+        };
+
+        Random rand = new Random();
+        return templates[rand.nextInt(templates.length)];
+    }
+
+    private void initReview() {
+//        Reviews	~80	Chỉ review sản phẩm có đơn DELIVERED, đảm bảo UNIQUE(user_id, product_id)
+        if (reviewRepository.count() > 0) {
+            return; // Đã có dữ liệu review, không seed nữa
+        }
+
+        // 1. Tìm tất cả đơn hàng có trạng thái DELIVERED của các user từ ID 1 đến 10
+        List<Order> deliveredOrders = orderRepository.findByStatusAndUserIdIn(
+                OrderStatus.DELIVERED,
+                List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L)
+        );
+
+        // Set để kiểm tra trùng lặp UNIQUE(user_id, product_id) trong lúc loop
+        Set<String> uniquePairs = new HashSet<>();
+        List<Review> reviewsToSave = new ArrayList<>();
+        Random random = new Random();
+
+
+        // 2. Duyệt qua các đơn hàng thành công để lấy cặp (User, Product) thực tế đã mua hàng
+        for (Order order : deliveredOrders) {
+            User user = order.getUser();
+
+            for (OrderItem item : order.getItems()) {
+                Product product = item.getProduct();
+
+                // Kiểm tra điều kiện giới hạn ID sản phẩm từ 1 đến 12
+                if (product.getId() >= 1 && product.getId() <= 12) {
+
+                    String uniqueKey = user.getId() + "_" + product.getId();
+
+                    // Nếu cặp (user_id, product_id) này chưa từng được tạo review
+                    if (!uniquePairs.contains(uniqueKey)) {
+                        uniquePairs.add(uniqueKey);
+                        String fakeComment = generateVietnameseComment(faker);
+                        Review review = Review.builder()
+                                .user(user)
+                                .product(product)
+                                .rating(random.nextInt(5) + 1) // Random số sao 1 - 5
+                                .comment(fakeComment)
+                                .build();
+                        reviewsToSave.add(review);
+                    }
+                }
+
+                // Dừng lại khi đã đạt xấp xỉ mục tiêu ~80 bản ghi
+                if (reviewsToSave.size() >= 80) {
+                    break;
+                }
+            }
+            if (reviewsToSave.size() >= 80) {
+                break;
+            }
+        }
+
+        // 3. Lưu toàn bộ xuống Database bằng Batch Save
+        reviewRepository.saveAll(reviewsToSave);
+        log.info("====== SEEDED {} REVIEWS SUCCESSFULLY ======", reviewsToSave.size());
     }
 
     private void initOrders() {
@@ -86,12 +154,12 @@ public class InitData implements CommandLineRunner {
         for (int i = 0; i < 10; i++) statusDistribution.add(OrderStatus.PENDING);
         for (int i = 0; i < 10; i++) statusDistribution.add(OrderStatus.CONFIRMED);
         for (int i = 0; i < 10; i++) statusDistribution.add(OrderStatus.SHIPPING);
-        for (int i = 0; i < 15; i++) statusDistribution.add(OrderStatus.DELIVERED);
+        for (int i = 0; i < 100; i++) statusDistribution.add(OrderStatus.DELIVERED);
         for (int i = 0; i < 5; i++) statusDistribution.add(OrderStatus.CANCELLED);
 
         Collections.shuffle(statusDistribution);
 
-        int totalOrders = 50;
+        int totalOrders = 500;
         int userCount = allUsers.size();
         int productCount = availableProducts.size();
 
@@ -104,7 +172,7 @@ public class InitData implements CommandLineRunner {
                     orderIndex + 1);
             String orderCode = "ORD-" + timestamp + "-" + faker.random().hex(4).toUpperCase();
 
-            OrderStatus status = statusDistribution.get(orderIndex);
+            OrderStatus status = statusDistribution.get(orderIndex % statusDistribution.size());
             String shippingAddress = faker.address().fullAddress();
             String note = faker.buffy().quotes();
 
@@ -483,7 +551,6 @@ public class InitData implements CommandLineRunner {
 
         if (roleRepository.count() == 0) {
             roleRepository.saveAll(roles);
-            log.info("Initialized roles: {}", roles);
         }
     }
 }

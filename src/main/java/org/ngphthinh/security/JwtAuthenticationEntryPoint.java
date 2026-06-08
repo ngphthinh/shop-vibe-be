@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.ngphthinh.dto.response.ApiResponse;
 import org.ngphthinh.dto.response.ErrorResponse;
 import org.ngphthinh.exception.ErrorCode;
+import org.ngphthinh.exception.auth.AccountLockedException;
 import org.ngphthinh.util.AppUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,7 +25,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
 
-        ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
+        ErrorCode errorCode = getErrorCode(authException);
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(errorCode.getStatusCode().value());
@@ -38,5 +39,20 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
         response.flushBuffer();
 
+    }
+
+    // Phương thức này sẽ kiểm tra nguyên nhân gốc của AuthenticationException để xác định mã lỗi phù hợp
+    private static ErrorCode getErrorCode(AuthenticationException authException) {
+        ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
+
+        // Kiểm tra xem lỗi nguyên nhân gốc (Root Cause) có phải là AccountLockedException không
+        if (authException.getCause() instanceof AccountLockedException) {
+            errorCode = ErrorCode.ACCOUNT_LOCKED; // Gán mã lỗi tài khoản bị khóa của bạn
+        }
+        // Dự phòng trường hợp lỗi bị bọc sâu thêm 1 tầng nữa
+        else if (authException.getCause() != null && authException.getCause().getCause() instanceof AccountLockedException) {
+            errorCode = ErrorCode.ACCOUNT_LOCKED;
+        }
+        return errorCode;
     }
 }

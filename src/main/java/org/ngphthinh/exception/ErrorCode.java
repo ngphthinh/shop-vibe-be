@@ -44,7 +44,13 @@ public enum ErrorCode {
     CART_EMPTY(400, "Cart is empty", HttpStatus.BAD_REQUEST),
     INVALID_ORDER_STATUS(400, "Invalid order status", HttpStatus.BAD_REQUEST), ORDER_NOT_FOUND(404, "Order not found", HttpStatus.NOT_FOUND),
     ORDER_CANNOT_BE_CANCELLED(409, "Cancellation is only allowed for pending orders", HttpStatus.CONFLICT),
-    INVALID_STATUS_TRANSITION(409, "Unable to change status from {oldStatus} to {newStatus}", HttpStatus.CONFLICT);
+    INVALID_STATUS_TRANSITION(409, "Unable to change status from {oldStatus} to {newStatus}", HttpStatus.CONFLICT),
+    REVIEW_CREATION_FORBIDDEN(403, "Review creation is only allowed for users who have delivered the product", HttpStatus.FORBIDDEN),
+    REVIEW_ALREADY_EXISTS(409, "Each user can only leave one review.", HttpStatus.CONFLICT),
+    REVIEW_NOT_FOUND(404, "Review not found", HttpStatus.NOT_FOUND),
+    ORDER_STATUS_UPDATE_FORBIDDEN(403, "Order status update is not allowed", HttpStatus.FORBIDDEN),
+    REVIEW_NO_PURCHASE(403, "Review creation is only allowed for users who have purchased the product", HttpStatus.FORBIDDEN),
+    ORDER_NOT_DELIVERED(403, "Order is not delivered", HttpStatus.FORBIDDEN), CANNOT_LOCK_OWN_ACCOUNT(403, "Cannot lock own account", HttpStatus.FORBIDDEN);
 
     private final int code;
     private final String message;

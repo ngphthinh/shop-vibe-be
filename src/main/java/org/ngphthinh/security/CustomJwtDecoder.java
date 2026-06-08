@@ -2,13 +2,12 @@ package org.ngphthinh.security;
 
 import lombok.RequiredArgsConstructor;
 import org.ngphthinh.dto.request.user.IntrospectRequest;
+import org.ngphthinh.exception.auth.AccountLockedException;
 import org.ngphthinh.service.AuthenticationService;
+import org.ngphthinh.service.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -18,8 +17,8 @@ import java.util.Objects;
 @Component
 public class CustomJwtDecoder implements JwtDecoder {
 
-    private final AuthenticationService authenticationService;
 
+    private final AuthenticationService authenticationService;
     @Value("${jwt.secret-key}")
     private String SECRET_KEY;
 
@@ -33,18 +32,22 @@ public class CustomJwtDecoder implements JwtDecoder {
      */
     @Override
     public Jwt decode(String token) throws JwtException {
-        IntrospectRequest introspectRequest = IntrospectRequest.builder().accessToken(token).build();
-        var response = authenticationService.introspect(introspectRequest);
+        try {
+            var response = authenticationService.introspect(IntrospectRequest.builder().accessToken(token).build());
 
-        if (!response.isActive()) throw new JwtException("Invalid token");
+            if (!response.isActive()) throw new JwtException("Invalid token");
 
-        if (Objects.isNull(nimbusJwtDecoder)) {
-            SecretKeySpec secretKeySpec = new SecretKeySpec(SECRET_KEY.getBytes(), "HS512");
-            nimbusJwtDecoder = NimbusJwtDecoder.withSecretKey(secretKeySpec)
-                    .macAlgorithm(MacAlgorithm.HS512)
-                    .build();
+            if (Objects.isNull(nimbusJwtDecoder)) {
+                SecretKeySpec secretKeySpec = new SecretKeySpec(SECRET_KEY.getBytes(), "HS512");
+                nimbusJwtDecoder = NimbusJwtDecoder.withSecretKey(secretKeySpec)
+                        .macAlgorithm(MacAlgorithm.HS512)
+                        .build();
+            }
+
+            return nimbusJwtDecoder.decode(token);
+        } catch (AccountLockedException e) {
+            // If the account is locked,
+            throw new BadJwtException(e.getMessage(), e);
         }
-
-        return nimbusJwtDecoder.decode(token);
     }
 }

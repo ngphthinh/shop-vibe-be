@@ -27,4 +27,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u.id FROM User u WHERE u.email = :userEmail")
     Optional<Long> findIdByEmail(@NotBlank(message = "Email is required") String userEmail);
+
+    boolean existsByEmailAndIsLockedTrue(String email);
 }

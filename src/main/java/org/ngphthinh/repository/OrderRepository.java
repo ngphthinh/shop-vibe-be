@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -107,5 +108,25 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                     """
     )
     Page<OrderProjection> findByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime createdAtAfter, LocalDateTime createdAtBefore, Pageable pageable);
+
+    List<Order> findByStatusAndUserIdIn(OrderStatus status, Collection<Long> userIds);
+
+    @Query("""
+            SELECT COUNT(o) > 0
+            FROM Order o
+            JOIN o.items oi
+            WHERE o.user.id = :userId
+            AND oi.product.id = :productId
+            AND o.status = :status
+            """)
+    boolean existsByUserIdAndProductIdAndStatus(Long userId, Long productId, OrderStatus status);
+    @Query("""
+            SELECT COUNT(o) > 0
+            FROM Order o
+            JOIN o.items oi
+            WHERE o.user.id = :userId
+            AND oi.product.id = :productId
+            """)
+    boolean existsByUserIdAndProductId(Long userId, Long productId);
 }
 
