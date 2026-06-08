@@ -80,6 +80,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // Spring Security by default adds "SCOPE_" prefix to authorities extracted from JWT. This method removes that prefix.
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
 

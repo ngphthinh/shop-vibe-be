@@ -31,8 +31,13 @@ public enum ResponseCode {
     CART_RETRIEVE_SUCCESS(4000, "Successfully retrieved cart"),
     CART_ITEM_UPDATE_SUCCESS(4001, "Successfully updated cart item"),
     CART_ITEM_DELETE_SUCCESS(4002, "Successfully deleted cart item"),
+    CART_CLEAR_SUCCESS(4003, "Successfully cleared cart"),
 
-    CART_CLEAR_SUCCESS(4003, "Successfully cleared cart");
+    ORDER_CREATE_SUCCESS(5000, "Successfully created order"),
+    ORDER_GET_SUCCESS(5001, "Successfully retrieved orders"),
+    ORDER_GET_BY_ID_SUCCESS(5002, "Successfully retrieved order by ID"),
+    ORDER_CANCEL_SUCCESS(5003, "Successfully cancelled order"),
+    ORDER_STATUS_UPDATE_SUCCESS(5004, "Successfully updated order status");
 
     private final int code;
     private final String message;

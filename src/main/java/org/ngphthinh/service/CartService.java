@@ -12,6 +12,7 @@ import org.ngphthinh.entity.CartItem;
 import org.ngphthinh.entity.Product;
 import org.ngphthinh.exception.AppException;
 import org.ngphthinh.exception.ErrorCode;
+import org.ngphthinh.exception.product.InsufficientStockException;
 import org.ngphthinh.mapper.CartMapper;
 import org.ngphthinh.repository.CartItemRepository;
 import org.ngphthinh.repository.CartRepository;
@@ -40,8 +41,6 @@ public class CartService {
     @PreAuthorize("hasRole('USER')")
     public CartResponse getCartItems() {
         String email = AppUtil.emailFromAuthentication();
-
-
         return cartMapper.toCartResponse(cartRepository.findByUserEmail(email));
     }
 
@@ -96,7 +95,7 @@ public class CartService {
         }
 
         if (cartItem.getProduct().getStockQuantity() < request.getQuantity()) {
-            throw new AppException(ErrorCode.INSUFFICIENT_PRODUCT_STOCK);
+            throw new InsufficientStockException();
         }
 
         cartItem.setQuantity(request.getQuantity());

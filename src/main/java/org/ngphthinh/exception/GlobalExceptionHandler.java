@@ -5,8 +5,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.ngphthinh.dto.response.ApiResponse;
 import org.ngphthinh.dto.response.ErrorResponse;
 import org.ngphthinh.exception.auth.DuplicateEmailException;
+import org.ngphthinh.exception.order.InvalidStatusTransitionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -103,6 +105,13 @@ public class GlobalExceptionHandler {
         return message;
     }
 
+    private String mapAttributes(String message, Map<String, String> attributes) {
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            message = mapAttribute(message, entry.getKey(), entry.getValue());
+        }
+        return message;
+    }
+
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateEmailException(DuplicateEmailException ex, HttpServletRequest request) {
 
@@ -164,5 +173,42 @@ public class GlobalExceptionHandler {
             return ResponseEntity.status(errorCode.getStatusCode()).body(response);
 
         }
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleObjectOptimisticLockingFailureException(ObjectOptimisticLockingFailureException e, HttpServletRequest request) {
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(ErrorCode.OPTIMISTIC_LOCKING_FAILURE.getStatusCode().value())
+                .error(HttpStatus.valueOf(ErrorCode.OPTIMISTIC_LOCKING_FAILURE.getStatusCode().value()).getReasonPhrase())
+                .message(ErrorCode.OPTIMISTIC_LOCKING_FAILURE.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(ErrorCode.OPTIMISTIC_LOCKING_FAILURE.getStatusCode()).body(response);
+    }
+
+    @ExceptionHandler(InvalidStatusTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidStatusTransitionException(InvalidStatusTransitionException e, HttpServletRequest request) {
+
+        String message = e.getErrorCode().getMessage();
+
+        if (Objects.nonNull(e.getKeyNewStatus()) && Objects.nonNull(e.getAttributeNewStatus()) && Objects.nonNull(e.getKeyOldStatus()) && Objects.nonNull(e.getAttributeOldStatus())) {
+            Map<String, String> attributes = Map.of(
+                    e.getKeyNewStatus(), e.getAttributeNewStatus(),
+                    e.getKeyOldStatus(), e.getAttributeOldStatus()
+            );
+            message = mapAttributes(message, attributes);
+        }
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(e.getErrorCode().getStatusCode().value())
+                .error(HttpStatus.valueOf(e.getErrorCode().getStatusCode().value()).getReasonPhrase())
+                .message(message)
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(e.getErrorCode().getStatusCode()).body(response);
     }
 }

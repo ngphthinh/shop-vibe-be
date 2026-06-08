@@ -5,13 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
 import org.ngphthinh.dto.request.user.UserCreateRequest;
 import org.ngphthinh.entity.*;
+import org.ngphthinh.enums.PaymentStatus;
 import org.ngphthinh.enums.RoleName;
 import org.ngphthinh.repository.CategoryRepository;
 import org.ngphthinh.repository.CartRepository;
+import org.ngphthinh.repository.OrderItemRepository;
+import org.ngphthinh.repository.OrderRepository;
 import org.ngphthinh.repository.ProductRepository;
 import org.ngphthinh.repository.RoleRepository;
 import org.ngphthinh.repository.UserRepository;
 import org.ngphthinh.service.AuthenticationService;
+import org.ngphthinh.enums.OrderStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
@@ -20,6 +24,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Profile("dev")
@@ -34,6 +41,8 @@ public class InitData implements CommandLineRunner {
     private final CartRepository cartRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     @Value("${app.default-password}")
     private String defaultPassword;
     private final AuthenticationService authenticationService;
@@ -47,9 +56,129 @@ public class InitData implements CommandLineRunner {
         initCategories();
         initProducts();
         initCart();
+        initOrders();
 
 
     }
+
+    private void initOrders() {
+
+        long orderCount = orderRepository.count();
+        if (orderCount > 0) {
+            log.info("Database has existing orders ({} records), skipping seeding orders.", orderCount);
+            return;
+        }
+
+        List<User> allUsers = userRepository.findAll();
+        List<Product> availableProducts = productRepository.findAll().stream()
+                .filter(product -> !Boolean.TRUE.equals(product.getIsDeleted()))
+                .toList();
+
+        if (allUsers.isEmpty() || availableProducts.isEmpty()) {
+            log.warn("No users or products found. Skipping orders seeding.");
+            return;
+        }
+
+        log.info("=== START SEEDING ORDERS ===");
+
+        // Phân bổ trạng thái đơn hàng
+        List<OrderStatus> statusDistribution = new ArrayList<>();
+        for (int i = 0; i < 10; i++) statusDistribution.add(OrderStatus.PENDING);
+        for (int i = 0; i < 10; i++) statusDistribution.add(OrderStatus.CONFIRMED);
+        for (int i = 0; i < 10; i++) statusDistribution.add(OrderStatus.SHIPPING);
+        for (int i = 0; i < 15; i++) statusDistribution.add(OrderStatus.DELIVERED);
+        for (int i = 0; i < 5; i++) statusDistribution.add(OrderStatus.CANCELLED);
+
+        Collections.shuffle(statusDistribution);
+
+        int totalOrders = 50;
+        int userCount = allUsers.size();
+        int productCount = availableProducts.size();
+
+        for (int orderIndex = 0; orderIndex < totalOrders; orderIndex++) {
+            User user = allUsers.get(orderIndex % userCount);
+
+            // Tạo mã đơn hàng ORD-YYYYMMDD-XXXX
+            String timestamp = String.format("%s%04d",
+                    LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                    orderIndex + 1);
+            String orderCode = "ORD-" + timestamp + "-" + faker.random().hex(4).toUpperCase();
+
+            OrderStatus status = statusDistribution.get(orderIndex);
+            String shippingAddress = faker.address().fullAddress();
+            String note = faker.buffy().quotes();
+
+            // Tạo ngẫu nhiên danh sách order items (1 - 5 sản phẩm)
+            int itemCount = faker.number().numberBetween(1, 6);
+            Set<OrderItem> orderItems = new HashSet<>();
+            BigDecimal totalAmount = BigDecimal.ZERO;
+
+            for (int itemIndex = 0; itemIndex < itemCount; itemIndex++) {
+                Product product = availableProducts.get((orderIndex + itemIndex) % productCount);
+                int quantity = faker.number().numberBetween(1, 5);
+                BigDecimal unitPrice = product.getPrice();
+                BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+
+                String productThumbnail = null;
+                if (product.getImages() != null && !product.getImages().isEmpty()) {
+                    productThumbnail = product.getImages().stream()
+                            .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
+                            .findFirst()
+                            .map(ProductImage::getImageUrl)
+                            .orElse(null);
+                }
+
+                OrderItem orderItem = OrderItem.builder()
+                        .product(product)
+                        .unitPrice(unitPrice)
+                        .quantity(quantity)
+                        .subtotal(subtotal)
+                        .productName(product.getName())
+                        .productThumbnail(productThumbnail)
+                        .build();
+
+                orderItems.add(orderItem);
+                totalAmount = totalAmount.add(subtotal);
+            }
+
+            // Sinh dữ liệu Payment tương ứng (Sửa lỗi mất kết quả khi JOIN API)
+            PaymentStatus paymentStatus = (status == OrderStatus.DELIVERED) ? PaymentStatus.SUCCESS : PaymentStatus.PENDING;
+            String paymentMethod = (orderIndex % 2 == 0) ? "COD" : "VNPAY";
+
+            Payment payment = Payment.builder()
+                    .amount(totalAmount)
+                    .method(paymentMethod)
+                    .status(paymentStatus)
+                    .paidAt(paymentStatus == PaymentStatus.SUCCESS ? LocalDateTime.now() : null)
+                    .build();
+
+            // Khởi tạo thực thể Order hoàn chỉnh
+            Order order = Order.builder()
+                    .orderCode(orderCode)
+                    .user(user)
+                    .totalAmount(totalAmount)
+                    .status(status)
+                    .shippingAddress(shippingAddress)
+                    .note(note)
+                    .items(orderItems)
+                    .payment(payment)
+                    .build();
+
+            payment.setOrder(order); // Thiết lập quan hệ 1-1 giữa Order và Payment
+            // Liên kết quan hệ hai chiều cho từng Item
+            orderItems.forEach(item -> item.setOrder(order));
+
+            if (status == OrderStatus.CANCELLED) {
+                order.setCancelReason(faker.lorem().sentence());
+                order.setCancelledAt(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 10)));
+            }
+
+            orderRepository.save(order);
+        }
+
+        log.info("=== SEEDING ORDERS COMPLETED! TOTAL ORDERS IN DB: {} ===", orderRepository.count());
+    }
+
 
     private void initCart() {
         List<User> users = userRepository.findAll();

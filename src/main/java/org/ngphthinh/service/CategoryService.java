@@ -24,6 +24,7 @@ public class CategoryService {
     private final CategoryMapper categoryMapper;
     private final ProductRepository productRepository;
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "categories", key = "'categories:all'")
     public List<CategoryResponse> getAllCategories() {
         return categoryRepository.findByParentCategoryIsNull().stream()
@@ -31,6 +32,7 @@ public class CategoryService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public CategoryResponse getCategoryById(Long id) {
         Category category = categoryRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
         return categoryMapper.toCategoryResponse(category);
@@ -113,6 +115,7 @@ public class CategoryService {
 
         return categoryMapper.toCategoryResponse(categoryRepository.save(category));
     }
+
 
     public Category findCategoryById(Long id) {
         return categoryRepository.findById(id).orElse(null);

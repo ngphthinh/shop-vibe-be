@@ -48,6 +48,7 @@ public class ProductService {
     private final ProductImageAsyncService productImageAsyncService;
     private final ProductImageMapper productImageMapper;
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "products", key = "#page + '-' + #size + '-' + #sort")
     public PagingResponse<ProductResponse> getAllProducts(int page, int size, String sort) {
 
@@ -58,7 +59,7 @@ public class ProductService {
 
         return getProductResponsePagingResponse(productPage);
     }
-
+    @Transactional(readOnly = true)
     public ProductDetailResponse getProductById(Long id) {
         ProductProjection productProjection = productRepository.findByIdWithProjection(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
@@ -67,6 +68,7 @@ public class ProductService {
         return productMapper.toProductDetailResponse(productProjection, imgUrls);
     }
 
+    @Transactional(readOnly = true)
     public PagingResponse<ProductResponse> getProductsByCategoryId(String keyword, int page, int size, String sort) {
         Pageable pageable = AppUtil.buildPageable(page, size, sort);
         Page<ProductProjection> productPage = productRepository.findProductsByKeyword(keyword, pageable);
@@ -176,7 +178,7 @@ public class ProductService {
         productImageRepository.deleteById(imgId);
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<ProductImageResponse> saveProductImages(List<MultipartFile> imageBytesList, Long productId) {
 
         productRepository.findByIdAndIsDeletedFalse(productId)

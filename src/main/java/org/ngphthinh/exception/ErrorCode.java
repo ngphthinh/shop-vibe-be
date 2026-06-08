@@ -36,8 +36,15 @@ public enum ErrorCode {
     DELETE_IMAGE_FAILED(500, "Failed to delete image", HttpStatus.INTERNAL_SERVER_ERROR),
     IMAGE_PROCESSING_FAILED(500, "Failed to process image", HttpStatus.INTERNAL_SERVER_ERROR),
     NO_IMAGES_PROVIDED(400, "No images provided", HttpStatus.BAD_REQUEST),
-    CART_NOT_FOUND(404, "Cart not found", HttpStatus.NOT_FOUND), CART_ITEM_NOT_FOUND(404, "Cart item not found", HttpStatus.NOT_FOUND),
-    CART_ITEM_NOT_BELONG_TO_USER(403, "Cart item does not belong to the user", HttpStatus.FORBIDDEN), INSUFFICIENT_PRODUCT_STOCK(400, "Insufficient product stock", HttpStatus.BAD_REQUEST);
+    CART_NOT_FOUND(404, "Cart not found", HttpStatus.NOT_FOUND),
+    CART_ITEM_NOT_FOUND(404, "Cart item not found", HttpStatus.NOT_FOUND),
+    CART_ITEM_NOT_BELONG_TO_USER(403, "Cart item does not belong to the user", HttpStatus.FORBIDDEN),
+    INSUFFICIENT_PRODUCT_STOCK(409, "Insufficient product stock", HttpStatus.CONFLICT),
+    OPTIMISTIC_LOCKING_FAILURE(409, "Optimistic locking failure", HttpStatus.CONFLICT),
+    CART_EMPTY(400, "Cart is empty", HttpStatus.BAD_REQUEST),
+    INVALID_ORDER_STATUS(400, "Invalid order status", HttpStatus.BAD_REQUEST), ORDER_NOT_FOUND(404, "Order not found", HttpStatus.NOT_FOUND),
+    ORDER_CANNOT_BE_CANCELLED(409, "Cancellation is only allowed for pending orders", HttpStatus.CONFLICT),
+    INVALID_STATUS_TRANSITION(409, "Unable to change status from {oldStatus} to {newStatus}", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;

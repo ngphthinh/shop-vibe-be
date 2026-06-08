@@ -71,6 +71,7 @@ public class AuthenticationService {
 
     }
 
+
     @Transactional
     public AuthenticateResponse authenticate(AuthenticateRequest request) {
         User user = userRepository.findByEmail((request.getEmail()))
@@ -106,6 +107,7 @@ public class AuthenticationService {
     }
 
 
+    @Transactional
     public IntrospectResponse introspect(IntrospectRequest request) {
         return jwtService.introspect(request.getAccessToken());
     }

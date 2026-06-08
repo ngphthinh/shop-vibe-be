@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class IntrospectResponse {
     private boolean active;
     private String scope;
-    private String clientId;
+    private String clientId; //
     private String username;
     private long exp;
     private long iat;

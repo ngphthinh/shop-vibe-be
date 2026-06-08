@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.ngphthinh.enums.PaymentStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "payments")
-public class Payment extends BaseEntity{
+public class Payment extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,8 +31,12 @@ public class Payment extends BaseEntity{
     @Column(nullable = false, length = 30)
     private PaymentStatus status;
 
-    @Column( unique = true, length = 100)
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal amount;
+
+    @Column(unique = true, length = 100)
     private String transactionId;
 
+    private LocalDateTime paidAt;
 
 }

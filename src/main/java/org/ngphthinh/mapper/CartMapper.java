@@ -15,11 +15,7 @@ public interface CartMapper {
 
 
     default CartResponse toCartResponse(List<CartProjection> cartProjection) {
-        if (cartProjection == null) {
-            return null;
-        }
-
-        if (cartProjection.isEmpty()) {
+        if (cartProjection == null || cartProjection.isEmpty()) {
             return CartResponse.builder()
                     .id(null)
                     .totalAmount(BigDecimal.ZERO)
@@ -28,10 +24,22 @@ public interface CartMapper {
                     .build();
         }
 
-        Long cartId = cartProjection.get(0).getId();
-        BigDecimal totalAmount = cartProjection.get(0).getTotalAmount();
-        Integer totalItems = cartProjection.get(0).getTotalItems();
+        // Đọc thông tin tổng quan của Giỏ hàng từ phần tử đầu tiên
+        CartProjection firstElement = cartProjection.get(0);
+        Long cartId = firstElement.getId();
+        BigDecimal totalAmount = firstElement.getTotalAmount();
+        Integer totalItems = firstElement.getTotalItems();
 
+        if (firstElement.getItemId() == null) {
+            return CartResponse.builder()
+                    .id(cartId)
+                    .totalAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO)
+                    .totalItems(totalItems != null ? totalItems : 0)
+                    .items(List.of())
+                    .build();
+        }
+
+        // Nếu thực sự có items, tiến hành map danh sách
         List<CartItemResponse> items = cartProjection.stream()
                 .map(this::toCartItemResponse)
                 .toList();
@@ -43,7 +51,6 @@ public interface CartMapper {
                 .items(items)
                 .build();
     }
-
 
     default CartItemResponse toCartItemResponse(CartProjection cartProjection) {
         if (cartProjection == null) {
@@ -70,7 +77,6 @@ public interface CartMapper {
         if (cartItem == null) {
             return null;
         }
-
 
         return CartItemResponse.builder()
                 .id(cartItem.getId())
