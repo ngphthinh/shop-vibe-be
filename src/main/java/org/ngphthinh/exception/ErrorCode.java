@@ -35,7 +35,9 @@ public enum ErrorCode {
     IMAGE_UPLOAD_FAILED(500, "Failed to upload image", HttpStatus.INTERNAL_SERVER_ERROR),
     DELETE_IMAGE_FAILED(500, "Failed to delete image", HttpStatus.INTERNAL_SERVER_ERROR),
     IMAGE_PROCESSING_FAILED(500, "Failed to process image", HttpStatus.INTERNAL_SERVER_ERROR),
-    NO_IMAGES_PROVIDED(400, "No images provided", HttpStatus.BAD_REQUEST);
+    NO_IMAGES_PROVIDED(400, "No images provided", HttpStatus.BAD_REQUEST),
+    CART_NOT_FOUND(404, "Cart not found", HttpStatus.NOT_FOUND), CART_ITEM_NOT_FOUND(404, "Cart item not found", HttpStatus.NOT_FOUND),
+    CART_ITEM_NOT_BELONG_TO_USER(403, "Cart item does not belong to the user", HttpStatus.FORBIDDEN), INSUFFICIENT_PRODUCT_STOCK(400, "Insufficient product stock", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

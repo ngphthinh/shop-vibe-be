@@ -29,10 +29,14 @@ public class CartItem extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column( nullable = false, precision = 15, scale = 2)
+    @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal unitPrice;
 
     @Column(nullable = false)
     private Integer quantity;
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal subtotal;
+
 
 }

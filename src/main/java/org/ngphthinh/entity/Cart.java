@@ -27,7 +27,7 @@ public class Cart extends BaseEntity {
 
     @Column(nullable = false, precision = 15, scale = 2)
     @Builder.Default
-    private BigDecimal totalPrice = BigDecimal.ZERO;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
 
     @Column(nullable = false)
     @Builder.Default

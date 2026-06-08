@@ -7,6 +7,7 @@ import org.ngphthinh.dto.request.user.UserCreateRequest;
 import org.ngphthinh.entity.*;
 import org.ngphthinh.enums.RoleName;
 import org.ngphthinh.repository.CategoryRepository;
+import org.ngphthinh.repository.CartRepository;
 import org.ngphthinh.repository.ProductRepository;
 import org.ngphthinh.repository.RoleRepository;
 import org.ngphthinh.repository.UserRepository;
@@ -16,6 +17,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -29,6 +31,7 @@ public class InitData implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final Faker faker = new Faker(Locale.ENGLISH);
     private final CategoryRepository categoryRepository;
+    private final CartRepository cartRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     @Value("${app.default-password}")
@@ -36,14 +39,98 @@ public class InitData implements CommandLineRunner {
     private final AuthenticationService authenticationService;
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         initRoles();
         initUsers();
         initCategories();
         initProducts();
+        initCart();
 
 
+    }
+
+    private void initCart() {
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            log.warn("No users found in the database. Skipping cart seeding.");
+            return;
+        }
+
+        List<Product> availableProducts = productRepository.findAll().stream()
+                .filter(product -> !Boolean.TRUE.equals(product.getIsDeleted()))
+                .toList();
+
+        if (availableProducts.isEmpty()) {
+            log.warn("No products found in the database. Skipping cart item seeding.");
+            return;
+        }
+
+        int seededCarts = 0;
+        int productCount = availableProducts.size();
+
+        for (int userIndex = 0; userIndex < users.size(); userIndex++) {
+            User user = users.get(userIndex);
+            Cart cart = user.getCart();
+
+            // 1. Nếu User chưa có Cart, tạo mới và gắn mối quan hệ 2 chiều
+            if (cart == null) {
+                cart = Cart.builder()
+                        .user(user)
+                        .totalAmount(BigDecimal.ZERO)
+                        .totalItems(0)
+                        .items(new LinkedHashSet<>()) // Khởi tạo sẵn Set trống
+                        .build();
+                user.setCart(cart);
+                // Không cần gọi userRepository.save(user) lẻ tẻ ở đây nữa,
+                // @Transactional sẽ tự động nhận diện thay đổi và tạo Cart khi kết thúc hàm.
+            }
+
+            // 2. Kiểm tra an toàn: Nếu giỏ hàng đã có sẵn đồ rồi thì bỏ qua không seed trùng nữa
+            if (cart.getItems() != null && !cart.getItems().isEmpty()) {
+                continue;
+            }
+
+            int itemCount = Math.min(3, productCount);
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            int totalItems = 0;
+
+            // Tận dụng lại Set sẵn có của Cart thay vì tạo Set mới toanh đè lên
+            if (cart.getItems() == null) {
+                cart.setItems(new LinkedHashSet<>());
+            }
+
+            for (int i = 0; i < itemCount; i++) {
+                Product product = availableProducts.get((userIndex + i) % productCount);
+                int quantity = i + 1;
+                BigDecimal unitPrice = product.getPrice();
+                BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+
+                CartItem cartItem = CartItem.builder()
+                        .cart(cart)
+                        .product(product)
+                        .unitPrice(unitPrice)
+                        .quantity(quantity)
+                        .subtotal(subtotal)
+                        .build();
+
+                // Thêm trực tiếp vào Set được Hibernate quản lý của Cart
+                cart.getItems().add(cartItem);
+
+                totalAmount = totalAmount.add(subtotal);
+                totalItems += quantity;
+            }
+
+            cart.setTotalAmount(totalAmount);
+            cart.setTotalItems(totalItems);
+
+            // 3. Chỉ cần save cart là đủ (Đảm bảo trong Cart entity có cascade = CascadeType.ALL)
+            cartRepository.save(cart);
+            seededCarts++;
+        }
+
+        log.info("Seeded cart data for {} users.", seededCarts);
     }
 
     private void initProducts() {
@@ -148,7 +235,6 @@ public class InitData implements CommandLineRunner {
                 .password(passwordEncoder.encode(defaultPassword))
                 .fullName("Admin One")
                 .phone(faker.phoneNumber().cellPhone())
-
                 .roles(new HashSet<>(adminRole))
                 .build();
 
