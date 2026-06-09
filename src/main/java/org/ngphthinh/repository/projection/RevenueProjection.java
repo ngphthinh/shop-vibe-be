@@ -6,5 +6,4 @@ import java.time.LocalDate;
 public interface RevenueProjection {
     LocalDate getDate();
     BigDecimal getRevenue();
-    BigDecimal getTotalRevenue();
 }

@@ -1,7 +1,6 @@
 package org.ngphthinh.dto.response.statistics;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.persistence.JoinColumn;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

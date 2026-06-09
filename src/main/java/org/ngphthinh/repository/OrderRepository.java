@@ -3,7 +3,7 @@ package org.ngphthinh.repository;
 import org.ngphthinh.entity.Order;
 import org.ngphthinh.enums.OrderStatus;
 import org.ngphthinh.repository.projection.*;
-import org.ngphthinh.service.AllTimeStatsProjection;
+import org.ngphthinh.repository.projection.AllTimeStatsProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -75,7 +75,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             SELECT o
             FROM Order o
             JOIN FETCH o.items oi
-            JOIN FETCH oi.product 
+            JOIN FETCH oi.product
             WHERE o.id =:orderId
             AND o.user.email =:email
             """)
@@ -134,8 +134,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("""
             SELECT
                 DATE(o.createdAt) AS date,
-                SUM(o.totalAmount) AS revenue,
-                SUM(SUM(o.totalAmount))  OVER () as totalRevenue
+                SUM(o.totalAmount) AS revenue
             FROM Order o
             WHERE o.createdAt BETWEEN :from AND :to
             GROUP BY DATE(o.createdAt)
@@ -145,11 +144,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
 
     @Query("""
-            SELECT COUNT(DISTINCT o.id) AS orders,
-                   SUM(o.totalAmount) AS revenue,
-                   (select COUNT(DISTINCT o2.user.id) from Order o2 where o2.createdAt BETWEEN :from AND :to) as newCustomers
-            FROM Order o
-            WHERE o.createdAt BETWEEN :from AND :to
+                SELECT
+                    COUNT(DISTINCT o.id) AS totalOrders,
+                    SUM(o.totalAmount) AS totalRevenue,
+                    COUNT(DISTINCT o.user.id) AS activeCustomers
+                FROM Order o
+                WHERE o.createdAt BETWEEN :from AND :to
             """)
     PeriodStatsProjection findPeriodStats(LocalDateTime from, LocalDateTime to);
 
@@ -166,14 +166,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             List<OrderStatus> orderStatuses, boolean isStatusesEmpty,
             LocalDateTime from, LocalDateTime to);
 
-
     @Query("""
-            SELECT
-                COUNT(DISTINCT o.id) AS totalOrders,
-                Count (DISTINCT o.user.id) AS totalCustomers,
-                COUNT (DISTINCT oi.product.id) AS totalProducts
-            FROM Order o
-            JOIN o.items oi
+                SELECT
+                    COUNT(DISTINCT o.id) AS totalOrders,
+                    COUNT(DISTINCT o.user.id) AS totalCustomers,
+                    (SELECT COUNT(p.id) FROM Product p WHERE p.isDeleted = false) AS totalProducts
+                FROM Order o
             """)
     AllTimeStatsProjection findAllTimeStats();
 }

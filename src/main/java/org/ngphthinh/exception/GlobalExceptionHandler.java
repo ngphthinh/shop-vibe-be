@@ -1,8 +1,6 @@
 package org.ngphthinh.exception;
 
-import com.sun.jdi.request.DuplicateRequestException;
 import jakarta.servlet.http.HttpServletRequest;
-import org.ngphthinh.dto.response.ApiResponse;
 import org.ngphthinh.dto.response.ErrorResponse;
 import org.ngphthinh.exception.auth.DuplicateEmailException;
 import org.ngphthinh.exception.order.InvalidStatusTransitionException;
@@ -87,16 +85,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request) {
-        {
-            return ResponseEntity.status(ErrorCode.FORBIDDEN.getStatusCode())
-                    .body(ErrorResponse.builder()
-                            .timestamp(LocalDateTime.now())
-                            .status(ErrorCode.FORBIDDEN.getStatusCode().value())
-                            .error(HttpStatus.valueOf(ErrorCode.FORBIDDEN.getStatusCode().value()).getReasonPhrase())
-                            .message(ErrorCode.FORBIDDEN.getMessage())
-                            .path(request.getRequestURI())
-                            .build());
-        }
+        return ResponseEntity.status(ErrorCode.FORBIDDEN.getStatusCode())
+                .body(ErrorResponse.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(ErrorCode.FORBIDDEN.getStatusCode().value())
+                        .error(HttpStatus.valueOf(ErrorCode.FORBIDDEN.getStatusCode().value()).getReasonPhrase())
+                        .message(ErrorCode.FORBIDDEN.getMessage())
+                        .path(request.getRequestURI())
+                        .build());
     }
 
     private String mapAttribute(String message, String attributeKey, String attributeValue) {
@@ -136,7 +132,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
-        {
             ErrorCode errorCode = ErrorCode.INVALID_PARAMETER_TYPE;
             String message = e.getMessage();
 
@@ -173,7 +168,6 @@ public class GlobalExceptionHandler {
 
             return ResponseEntity.status(errorCode.getStatusCode()).body(response);
 
-        }
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)

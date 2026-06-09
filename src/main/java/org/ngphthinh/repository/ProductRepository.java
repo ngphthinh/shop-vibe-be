@@ -18,7 +18,7 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("""
-                SELECT
+                SELECT 
                     p.id AS id, 
                     p.name AS name, 
                     p.slug AS slug, 
@@ -26,18 +26,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                     p.price AS price, 
                     p.stockQuantity AS stockQuantity, 
                     c.id AS categoryId, 
-                    c.name AS categoryName,
-            
-                    (SELECT COALESCE(AVG(r.rating), 0.0) FROM Review r WHERE r.product.id = p.id) AS averageRating, 
-            
-                    (SELECT COUNT(r.id) FROM Review r WHERE r.product.id = p.id) AS reviewCount, 
-            
-                    (SELECT pi.imageUrl FROM ProductImage pi 
-                     WHERE pi.product.id = p.id AND pi.isPrimary = true) AS imageUrl
-            
+                    c.name AS categoryName, 
+                    COALESCE(AVG(r.rating), 0.0) AS averageRating, 
+                    COUNT(DISTINCT r.id) AS reviewCount, 
+                    pi.imageUrl AS imageUrl
                 FROM Product p 
                 LEFT JOIN p.category c 
+                LEFT JOIN Review r ON r.product.id = p.id
+                LEFT JOIN ProductImage pi ON pi.product.id = p.id AND pi.isPrimary = true
                 WHERE p.isDeleted = false
+                GROUP BY p.id, p.name, p.slug, p.description, p.price, p.stockQuantity, c.id, c.name, pi.imageUrl
             """)
     Page<ProductProjection> findAllProducts(Pageable pageable);
 

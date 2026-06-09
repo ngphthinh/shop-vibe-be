@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @AllArgsConstructor
@@ -14,8 +15,8 @@ import java.util.List;
 @Builder
 public class RevenueResponse {
 
-    private String from;
-    private String to;
+    private LocalDate from;
+    private LocalDate to;
     private BigDecimal totalRevenue;
     private List<RevenueDataResponse> data;
 }

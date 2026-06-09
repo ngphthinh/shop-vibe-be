@@ -1,6 +1,5 @@
 package org.ngphthinh.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.ngphthinh.dto.response.statistics.*;
 import org.ngphthinh.enums.OrderStatus;
@@ -17,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.*;
 import java.util.Collections;
 import java.util.List;
@@ -39,10 +39,14 @@ public class StatisticsService {
                 .map(statisticsMapper::toRevenueDataResponse)
                 .toList();
 
+        BigDecimal totalRevenue = revenueProjections.stream()
+                .map(RevenueProjection::getRevenue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return RevenueResponse.builder()
-                .from(from.toString())
-                .to(to.toString())
-                .totalRevenue(revenueProjections.getFirst().getTotalRevenue())
+                .from(from)
+                .to(to)
+                .totalRevenue(totalRevenue)
                 .data(revenueData)
                 .build();
     }
@@ -103,7 +107,6 @@ public class StatisticsService {
                 .build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     private PeriodStats getPeriodStats(PeriodStatistics periodStatistics) {
         LocalDate now = LocalDate.now();
         LocalDate start;
@@ -136,11 +139,9 @@ public class StatisticsService {
 
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     private static OrdersByStatus getOrdersByStatus(List<OrdersByStatusProjection> ordersByStatusProjections) {
         OrdersByStatus ordersByStatus = new OrdersByStatus();
         for (OrdersByStatusProjection ordersByStatusProjection : ordersByStatusProjections) {
-            System.out.println(ordersByStatusProjection.getStatus() + " - " + ordersByStatusProjection.getCount());
             switch (ordersByStatusProjection.getStatus()) {
                 case OrderStatus.PENDING -> ordersByStatus.setPending(ordersByStatusProjection.getCount());
                 case OrderStatus.CONFIRMED -> ordersByStatus.setConfirmed(ordersByStatusProjection.getCount());

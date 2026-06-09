@@ -1,4 +1,4 @@
-package org.ngphthinh.service;
+package org.ngphthinh.repository.projection;
 
 public interface AllTimeStatsProjection {
 
