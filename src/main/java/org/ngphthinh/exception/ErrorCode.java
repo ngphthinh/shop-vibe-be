@@ -39,7 +39,7 @@ public enum ErrorCode {
     CART_NOT_FOUND(404, "Cart not found", HttpStatus.NOT_FOUND),
     CART_ITEM_NOT_FOUND(404, "Cart item not found", HttpStatus.NOT_FOUND),
     CART_ITEM_NOT_BELONG_TO_USER(403, "Cart item does not belong to the user", HttpStatus.FORBIDDEN),
-    INSUFFICIENT_PRODUCT_STOCK(409, "Insufficient product stock", HttpStatus.CONFLICT),
+    INSUFFICIENT_PRODUCT_STOCK(409, "Insufficient stock for product {name}. Available stock: {availableStock}", HttpStatus.CONFLICT),
     OPTIMISTIC_LOCKING_FAILURE(409, "Optimistic locking failure", HttpStatus.CONFLICT),
     CART_EMPTY(400, "Cart is empty", HttpStatus.BAD_REQUEST),
     INVALID_ORDER_STATUS(400, "Invalid order status", HttpStatus.BAD_REQUEST), ORDER_NOT_FOUND(404, "Order not found", HttpStatus.NOT_FOUND),
@@ -50,7 +50,7 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(404, "Review not found", HttpStatus.NOT_FOUND),
     ORDER_STATUS_UPDATE_FORBIDDEN(403, "Order status update is not allowed", HttpStatus.FORBIDDEN),
     REVIEW_NO_PURCHASE(403, "Review creation is only allowed for users who have purchased the product", HttpStatus.FORBIDDEN),
-    ORDER_NOT_DELIVERED(403, "Order is not delivered", HttpStatus.FORBIDDEN), CANNOT_LOCK_OWN_ACCOUNT(403, "Cannot lock own account", HttpStatus.FORBIDDEN);
+    ORDER_NOT_DELIVERED(403, "Order is not delivered", HttpStatus.FORBIDDEN), CANNOT_LOCK_OWN_ACCOUNT(403, "Cannot lock own account", HttpStatus.FORBIDDEN), INVALID_PERIOD_STATISTICS(400, "Invalid period statistics", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

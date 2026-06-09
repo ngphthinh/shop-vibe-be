@@ -31,7 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CartServiceTest {
+class CartServiceTest {
 
     @Mock
     private CartRepository cartRepository;
@@ -49,7 +49,7 @@ public class CartServiceTest {
     private CartService cartService;
 
     @Test
-    public void addCartItem_whenCartNotFound_shouldThrow() {
+      void addCartItem_whenCartNotFound_shouldThrow() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("no-cart@example.com");
 
@@ -63,7 +63,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void addCartItem_whenNewItem_shouldSaveAndReturn() {
+      void addCartItem_whenNewItem_shouldSaveAndReturn() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             String email = "user@example.com";
             utilities.when(AppUtil::emailFromAuthentication).thenReturn(email);
@@ -117,7 +117,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void updateCartItems_whenCartItemNotFound_shouldThrow() {
+      void updateCartItems_whenCartItemNotFound_shouldThrow() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -131,7 +131,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void updateCartItems_whenNotOwner_shouldThrow() {
+      void updateCartItems_whenNotOwner_shouldThrow() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -159,7 +159,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void updateCartItems_whenQuantityZero_shouldDeleteAndReturnMessage() {
+      void updateCartItems_whenQuantityZero_shouldDeleteAndReturnMessage() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             String email = "user@example.com";
             utilities.when(AppUtil::emailFromAuthentication).thenReturn(email);
@@ -196,7 +196,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void updateCartItems_whenInsufficientStock_shouldThrow() {
+      void updateCartItems_whenInsufficientStock_shouldThrow() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             String email = "user@example.com";
             utilities.when(AppUtil::emailFromAuthentication).thenReturn(email);
@@ -226,7 +226,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void updateCartItems_whenUpdateSuccessful_shouldSaveAndReturn() {
+      void updateCartItems_whenUpdateSuccessful_shouldSaveAndReturn() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             String email = "user@example.com";
             utilities.when(AppUtil::emailFromAuthentication).thenReturn(email);
@@ -277,7 +277,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void removeCartItem_whenCartItemNotFound_shouldThrow() {
+      void removeCartItem_whenCartItemNotFound_shouldThrow() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -292,7 +292,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void removeCartItem_whenNotOwner_shouldThrow() {
+      void removeCartItem_whenNotOwner_shouldThrow() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -316,7 +316,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void removeCartItem_whenOwner_shouldDeleteAndUpdateTotals() {
+      void removeCartItem_whenOwner_shouldDeleteAndUpdateTotals() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             String email = "user@example.com";
             utilities.when(AppUtil::emailFromAuthentication).thenReturn(email);
@@ -342,7 +342,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void clearCart_whenCartNotFound_shouldThrow() {
+      void clearCart_whenCartNotFound_shouldThrow() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             String email = "missing-cart@example.com";
             utilities.when(AppUtil::emailFromAuthentication).thenReturn(email);
@@ -358,7 +358,7 @@ public class CartServiceTest {
     }
 
     @Test
-    public void clearCart_whenCartExists_shouldDeleteAllAndUpdateTotals() {
+      void clearCart_whenCartExists_shouldDeleteAllAndUpdateTotals() {
         try (MockedStatic<AppUtil> utilities = Mockito.mockStatic(AppUtil.class)) {
             String email = "user@example.com";
             Long cartId = 88L;

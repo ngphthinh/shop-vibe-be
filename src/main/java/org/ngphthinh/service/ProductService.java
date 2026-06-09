@@ -2,6 +2,7 @@ package org.ngphthinh.service;
 
 import jakarta.persistence.Entity;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.SQLDelete;
 import org.ngphthinh.dto.request.product.ProductCreateRequest;
 import org.ngphthinh.dto.request.product.ProductUpdateRequest;
@@ -37,6 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -79,7 +81,7 @@ public class ProductService {
     private PagingResponse<ProductResponse> getProductResponsePagingResponse(Page<ProductProjection> productPage) {
         List<ProductResponse> productResponses = productPage.getContent().stream()
                 .map(productMapper::toProductResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         return PagingResponse.<ProductResponse>builder()
                 .content(productResponses)
@@ -155,8 +157,10 @@ public class ProductService {
     @CacheEvict(value = "products", allEntries = true)
     public void deleteProductImage(Long id, Long imgId) {
         // Kiểm tra sản phẩm có tồn tại và chưa bị xóa
-        productRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if (!productRepository.existsByIdAndIsDeletedFalse(id)) {
+            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
 
         // Kiểm tra ảnh có tồn tại và thuộc về sản phẩm này
         if (!productImageRepository.existsByIdAndProductId(imgId, id)) {
@@ -170,8 +174,6 @@ public class ProductService {
                 ProductImage newPrimary = otherImages.get(0);
                 newPrimary.setIsPrimary(true);
                 productImageRepository.save(newPrimary);
-            } else {
-                //TODO: Nếu không còn ảnh nào khác, có thể để sản phẩm không có ảnh chính
             }
         }
 
@@ -181,9 +183,9 @@ public class ProductService {
     @PreAuthorize("hasRole('ADMIN')")
     public List<ProductImageResponse> saveProductImages(List<MultipartFile> imageBytesList, Long productId) {
 
-        productRepository.findByIdAndIsDeletedFalse(productId)
-                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-
+        if (!productRepository.existsByIdAndIsDeletedFalse(productId)) {
+            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
 
         if (imageBytesList == null || imageBytesList.isEmpty()) {
             throw new AppException(ErrorCode.NO_IMAGES_PROVIDED);
@@ -202,7 +204,14 @@ public class ProductService {
         try {
             // Block tại đây để đợi kết quả cuối cùng từ tất cả các Thread ngầm
             allOf.get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            log.error("Tiến trình bị gián đoạn đột ngột", e);
+            // BẮT BUỘC: Khôi phục lại trạng thái bị gián đoạn cho Thread hiện tại
+            Thread.currentThread().interrupt();
+
+        } catch (ExecutionException e) {
+            // Đối với ExecutionException, chỉ cần log lỗi hoặc ném ra RuntimeException tùy logic của bạn
+            log.error("Lỗi xảy ra trong quá trình thực thi luồng phụ", e.getCause());
             throw new AppException(ErrorCode.IMAGE_UPLOAD_FAILED);
         }
 

@@ -6,6 +6,7 @@ import org.ngphthinh.dto.response.ApiResponse;
 import org.ngphthinh.dto.response.ErrorResponse;
 import org.ngphthinh.exception.auth.DuplicateEmailException;
 import org.ngphthinh.exception.order.InvalidStatusTransitionException;
+import org.ngphthinh.exception.product.InsufficientStockException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -197,6 +198,30 @@ public class GlobalExceptionHandler {
             Map<String, String> attributes = Map.of(
                     e.getKeyNewStatus(), e.getAttributeNewStatus(),
                     e.getKeyOldStatus(), e.getAttributeOldStatus()
+            );
+            message = mapAttributes(message, attributes);
+        }
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(e.getErrorCode().getStatusCode().value())
+                .error(HttpStatus.valueOf(e.getErrorCode().getStatusCode().value()).getReasonPhrase())
+                .message(message)
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(e.getErrorCode().getStatusCode()).body(response);
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientStockException(InsufficientStockException e, HttpServletRequest request) {
+
+        String message = e.getErrorCode().getMessage();
+
+        if (Objects.nonNull(e.getKeyProduct()) && Objects.nonNull(e.getValueProduct()) && Objects.nonNull(e.getKeyAvailableStock()) && Objects.nonNull(e.getValueAvailableStock())) {
+            Map<String, String> attributes = Map.of(
+                    e.getKeyProduct(), e.getValueProduct(),
+                    e.getKeyAvailableStock(), e.getValueAvailableStock().toString()
             );
             message = mapAttributes(message, attributes);
         }

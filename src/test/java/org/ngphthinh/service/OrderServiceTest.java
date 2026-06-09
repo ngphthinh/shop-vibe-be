@@ -1,5 +1,6 @@
 package org.ngphthinh.service;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.ngphthinh.dto.request.order.OrderCancelRequest;
 import org.ngphthinh.dto.request.order.OrderCreateRequest;
 import org.ngphthinh.dto.request.order.OrderUpdateStatusRequest;
+import org.ngphthinh.dto.response.PagingResponse;
 import org.ngphthinh.dto.response.cart.CartItemResponse;
 import org.ngphthinh.dto.response.cart.CartResponse;
 import org.ngphthinh.dto.response.order.OrderResponse;
@@ -17,6 +19,7 @@ import org.ngphthinh.dto.response.product.ProductResponse;
 import org.ngphthinh.entity.*;
 import org.ngphthinh.enums.OrderStatus;
 import org.ngphthinh.exception.AppException;
+import org.ngphthinh.exception.ErrorCode;
 import org.ngphthinh.exception.cart.EmptyCartException;
 import org.ngphthinh.exception.order.InvalidStatusTransitionException;
 import org.ngphthinh.exception.order.OrderCannotBeCancelledException;
@@ -26,18 +29,30 @@ import org.ngphthinh.mapper.OrderMapper;
 import org.ngphthinh.repository.OrderRepository;
 import org.ngphthinh.repository.ProductRepository;
 import org.ngphthinh.repository.UserRepository;
+import org.ngphthinh.repository.projection.OrderProjection;
 import org.ngphthinh.util.AppUtil;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 @ExtendWith(MockitoExtension.class)
-public class OrderServiceTest {
+class OrderServiceTest {
+
+    @Mock
+    private SecureRandom secureRandom;
 
     @Mock
     private CartService cartService;
@@ -70,6 +85,7 @@ public class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
+
         mockUser = User.builder()
                 .id(1L)
                 .email("user@example.com")
@@ -113,7 +129,7 @@ public class OrderServiceTest {
     // ===== CREATE ORDER TESTS =====
 
     @Test
-    public void createOrder_success_shouldCreateOrderAndDeductStock() {
+    void createOrder_success_shouldCreateOrderAndDeductStock() {
         try (MockedStatic<AppUtil> utilities = mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -173,6 +189,8 @@ public class OrderServiceTest {
 
             doNothing().when(cartService).clearCart();
 
+            when(secureRandom.nextInt(anyInt())).thenReturn(1234);
+
             // 3. Thực thi hàm test
             OrderResponse response = orderService.createOrder(request);
 
@@ -189,7 +207,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    public void createOrder_emptyCart_shouldThrowEmptyCartException() {
+    void createOrder_emptyCart_shouldThrowEmptyCartException() {
         try (MockedStatic<AppUtil> utilities = mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -212,7 +230,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    public void createOrder_insufficientStock_shouldThrowInsufficientStockException() {
+    void createOrder_insufficientStock_shouldThrowInsufficientStockException() {
         try (MockedStatic<AppUtil> utilities = mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -254,7 +272,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    public void createOrder_stockDeducted_shouldReduceStockQuantity() {
+    void createOrder_stockDeducted_shouldReduceStockQuantity() {
         try (MockedStatic<AppUtil> utilities = mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -309,6 +327,7 @@ public class OrderServiceTest {
                     .status("PENDING")
                     .totalAmount(BigDecimal.valueOf(300))
                     .build());
+            when(secureRandom.nextInt(anyInt())).thenReturn(1234);
 
             doNothing().when(cartService).clearCart();
 
@@ -322,7 +341,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    public void createOrder_cartCleared_shouldClearUserCart() {
+    void createOrder_cartCleared_shouldClearUserCart() {
         try (MockedStatic<AppUtil> utilities = mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -374,6 +393,7 @@ public class OrderServiceTest {
                     .id(1L)
                     .status("PENDING")
                     .build());
+            when(secureRandom.nextInt(anyInt())).thenReturn(1234);
 
             doNothing().when(cartService).clearCart();
 
@@ -388,7 +408,7 @@ public class OrderServiceTest {
     // ===== CANCEL ORDER TESTS =====
 
     @Test
-    public void cancelOrder_success_shouldCancelPendingOrder() {
+    void cancelOrder_success_shouldCancelPendingOrder() {
         try (MockedStatic<AppUtil> utilities = mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -428,7 +448,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    public void cancelOrder_notPending_shouldThrowOrderCannotBeCancelledException() {
+    void cancelOrder_notPending_shouldThrowOrderCannotBeCancelledException() {
         try (MockedStatic<AppUtil> utilities = mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("user@example.com");
 
@@ -444,7 +464,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    public void cancelOrder_notOwner_shouldThrowAppException() {
+    void cancelOrder_notOwner_shouldThrowAppException() {
         try (MockedStatic<AppUtil> utilities = mockStatic(AppUtil.class)) {
             utilities.when(AppUtil::emailFromAuthentication).thenReturn("other@example.com");
 
@@ -461,7 +481,7 @@ public class OrderServiceTest {
     // ===== UPDATE STATUS TESTS =====
 
     @Test
-    public void updateOrderStatus_validTransition_shouldUpdateStatusSuccessfully() {
+    void updateOrderStatus_validTransition_shouldUpdateStatusSuccessfully() {
         mockOrder.setStatus(OrderStatus.PENDING);
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(mockOrder));
@@ -484,7 +504,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    public void updateOrderStatus_invalidTransition_shouldThrowInvalidStatusTransitionException() {
+    void updateOrderStatus_invalidTransition_shouldThrowInvalidStatusTransitionException() {
         mockOrder.setStatus(OrderStatus.DELIVERED);
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(mockOrder));
@@ -494,5 +514,202 @@ public class OrderServiceTest {
                 .build();
 
         assertThrows(InvalidStatusTransitionException.class, () -> orderService.updateOrderStatus(1L, request));
+    }
+    @Test
+    void getAllOrders_shouldReturnPagingResponse_whenStatusIsValid() {
+        // 1. SETUP
+        Pageable pageable = PageRequest.of(0, 10);
+        String statusStr = "DELIVERED";
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 9);
+
+        OrderProjection mockProjection = mock(OrderProjection.class);
+        Page<OrderProjection> ordersPage = new PageImpl<>(Collections.singletonList(mockProjection), pageable, 1);
+        OrderResponse mockResponse = new OrderResponse();
+
+        // Giả lập hành vi Repository và Mapper
+        when(orderRepository.findByStatusAndCreatedAtBetween(
+                eq(OrderStatus.DELIVERED),
+                eq(from.atStartOfDay()),
+                eq(to.atTime(LocalTime.MAX)),
+                eq(pageable)
+        )).thenReturn(ordersPage);
+
+        when(orderMapper.mapToOrderResponses(anyList())).thenReturn(Collections.singletonList(mockResponse));
+
+        // 2. ACT
+        PagingResponse<OrderResponse> actualResponse = orderService.getAllOrders(pageable, statusStr, from, to);
+
+        // 3. ASSERT
+        assertNotNull(actualResponse);
+        assertEquals(1, actualResponse.getContent().size());
+        assertEquals(0, actualResponse.getPage());
+        assertEquals(10, actualResponse.getSize());
+
+        // 4. VERIFY
+        verify(orderRepository, times(1)).findByStatusAndCreatedAtBetween(any(), any(), any(), any());
+    }
+
+    @Test
+    void getAllOrders_shouldWorkCorrectly_whenStatusIsNullOrEmpty() {
+        // SETUP kịch bản phủ nhánh rẽ: if (status == null || status.isEmpty())
+        Pageable pageable = PageRequest.of(0, 10);
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 9);
+
+        Page<OrderProjection> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        // Khi truyền vào "", biến orderStatus trong hàm phải gán bằng null
+        when(orderRepository.findByStatusAndCreatedAtBetween(
+                isNull(),
+                eq(from.atStartOfDay()),
+                eq(to.atTime(LocalTime.MAX)),
+                eq(pageable)
+        )).thenReturn(emptyPage);
+
+        // ACT (Truyền chuỗi rỗng "")
+        PagingResponse<OrderResponse> actualResponse = orderService.getAllOrders(pageable, "", from, to);
+
+        // ASSERT & VERIFY (Xác nhận tham số truyền vào Repo đúng là null)
+        assertNotNull(actualResponse);
+        verify(orderRepository).findByStatusAndCreatedAtBetween(isNull(), any(), any(), any());
+    }
+
+    @Test
+    void getAllOrders_shouldThrowAppException_whenStatusIsInvalid() {
+        // 1. SETUP
+        Pageable pageable = PageRequest.of(0, 10);
+        String invalidStatus = "COMPLETED_BUT_SAI_ENUM"; // Kích nổ IllegalArgumentException
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 9);
+
+        // 2. ACT & ASSERT (Bẫy đúng ngoại lệ ErrorCode.INVALID_ORDER_STATUS)
+        AppException exception = assertThrows(AppException.class, () ->
+                orderService.getAllOrders(pageable, invalidStatus, from, to)
+        );
+
+        assertEquals(ErrorCode.INVALID_ORDER_STATUS, exception.getErrorCode());
+
+        // 3. VERIFY (Lỗi convert Enum xảy ra lập tức, Repo tuyệt đối không được gọi)
+        verify(orderRepository, never()).findByStatusAndCreatedAtBetween(any(), any(), any(), any());
+        verify(orderMapper, never()).mapToOrderResponses(anyList());
+    }
+    @Test
+    void getOrders_shouldReturnPagingResponse_whenStatusIsValid() {
+        // 1. SETUP
+        try (MockedStatic<AppUtil> mockedAppUtil = mockStatic(AppUtil.class)) {
+            Pageable pageable = PageRequest.of(0, 10);
+            String statusStr = "PENDING";
+            LocalDate from = LocalDate.of(2026, 6, 1);
+            LocalDate to = LocalDate.of(2026, 6, 9);
+            String mockEmail = "customer@gmail.com";
+
+            mockedAppUtil.when(AppUtil::emailFromAuthentication).thenReturn(mockEmail);
+
+            OrderProjection mockProjection = mock(OrderProjection.class);
+            Page<OrderProjection> ordersPage = new PageImpl<>(Collections.singletonList(mockProjection), pageable, 1);
+            OrderResponse mockResponse = new OrderResponse();
+
+            when(orderRepository.findByUserEmailAndStatusAndCreatedAtBetween(
+                    eq(mockEmail),
+                    eq(OrderStatus.PENDING),
+                    eq(from.atStartOfDay()),
+                    eq(to.atTime(LocalTime.MAX)),
+                    eq(pageable)
+            )).thenReturn(ordersPage);
+
+            when(orderMapper.mapToOrderResponses(anyList())).thenReturn(Collections.singletonList(mockResponse));
+
+            // 2. ACT
+            PagingResponse<OrderResponse> actualResponse = orderService.getOrders(pageable, statusStr, from, to);
+
+            // 3. ASSERT
+            assertNotNull(actualResponse);
+            assertEquals(1, actualResponse.getContent().size());
+            assertEquals(0, actualResponse.getPage());
+            assertEquals(10, actualResponse.getSize());
+
+            // 4. VERIFY
+            verify(orderRepository).findByUserEmailAndStatusAndCreatedAtBetween(any(), any(), any(), any(), any());
+        }
+    }
+
+    @Test
+    void getOrders_shouldThrowAppException_whenStatusIsInvalid() {
+        // 1. SETUP
+        try (MockedStatic<AppUtil> mockedAppUtil = mockStatic(AppUtil.class)) {
+            Pageable pageable = PageRequest.of(0, 10);
+            String invalidStatus = "UNKNOWN_STATUS"; // Gây ra lỗi chuyển đổi Enum
+            LocalDate from = LocalDate.of(2026, 6, 1);
+            LocalDate to = LocalDate.of(2026, 6, 9);
+
+            mockedAppUtil.when(AppUtil::emailFromAuthentication).thenReturn("customer@gmail.com");
+
+            // 2. ACT & ASSERT (Ném lỗi INVALID_ORDER_STATUS)
+            AppException exception = assertThrows(AppException.class, () ->
+                    orderService.getOrders(pageable, invalidStatus, from, to)
+            );
+
+            assertEquals(ErrorCode.INVALID_ORDER_STATUS, exception.getErrorCode());
+
+            // VERIFY: Đảm bảo luồng bị chặn ngay lập tức, không gọi xuống Repository
+            verify(orderRepository, never()).findByUserEmailAndStatusAndCreatedAtBetween(any(), any(), any(), any(), any());
+
+        }
+    }
+
+    @Test
+    void getOrders_shouldWorkCorrectly_whenStatusIsEmptyOrNull() {
+        // SETUP kịch bản phủ nhánh rẽ `if (status == null || status.isEmpty())`
+        try (MockedStatic<AppUtil> mockedAppUtil = mockStatic(AppUtil.class)) {
+            Pageable pageable = PageRequest.of(0, 10);
+            LocalDate from = LocalDate.of(2026, 6, 1);
+            LocalDate to = LocalDate.of(2026, 6, 9);
+            String mockEmail = "customer@gmail.com";
+
+            mockedAppUtil.when(AppUtil::emailFromAuthentication).thenReturn(mockEmail);
+
+            Page<OrderProjection> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+            // Khi status truyền vào null, biến orderStatus gán bằng null
+            when(orderRepository.findByUserEmailAndStatusAndCreatedAtBetween(
+                    eq(mockEmail),
+                    isNull(),
+                    eq(from.atStartOfDay()),
+                    eq(to.atTime(LocalTime.MAX)),
+                    eq(pageable)
+            )).thenReturn(emptyPage);
+
+            // ACT
+            PagingResponse<OrderResponse> actualResponse = orderService.getOrders(pageable, null, from, to);
+
+            // ASSERT
+            assertNotNull(actualResponse);
+            verify(orderRepository).findByUserEmailAndStatusAndCreatedAtBetween(eq(mockEmail), isNull(), any(), any(), any());
+        }
+    }
+
+    // ==========================================
+    // TẬP TEST CASES CHO: getOrderById
+    // ==========================================
+
+    @Test
+    void getOrderById_shouldThrowAppException_whenOrderNotFound() {
+        // 1. SETUP
+        try (MockedStatic<AppUtil> mockedAppUtil = mockStatic(AppUtil.class)) {
+            Long orderId = 999L;
+            String mockEmail = "customer@gmail.com";
+
+            mockedAppUtil.when(AppUtil::emailFromAuthentication).thenReturn(mockEmail);
+
+            // Giả lập danh sách projection trống
+            when(orderRepository.findProjectionByIdAndUserEmail(orderId, mockEmail)).thenReturn(Collections.emptyList());
+
+            // 2. ACT & ASSERT
+            AppException exception = assertThrows(AppException.class, () -> orderService.getOrderById(orderId));
+
+            assertEquals(ErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+            verify(orderMapper, never()).toOrderResponse(Order.builder().build()); // Đảm bảo mapper không được gọi khi không tìm thấy đơn hàng
+        }
     }
 }

@@ -29,9 +29,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.ObjectMapper;
+
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -50,6 +51,7 @@ public class OrderService {
     private final OrderItemMapper orderItemMapper;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final SecureRandom secureRandom;
 
 
     @PreAuthorize("hasRole('USER')")
@@ -68,7 +70,7 @@ public class OrderService {
         for (CartItemResponse item : cartItems.getItems()) {
             Product product = productRepository.findByIdAndIsDeletedFalse(item.getProduct().getId()).orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
             if (product.getStockQuantity() < item.getQuantity()) {
-                throw new InsufficientStockException();
+                throw new InsufficientStockException("name", product.getName(), "availableStock", product.getStockQuantity());
             }
             OrderItem orderItem = orderItemMapper.toOrderItem(product, item.getQuantity(), item.getProduct().getPrimaryImageUrl());
             order.addItem(orderItem);
@@ -107,8 +109,11 @@ public class OrderService {
     public String generateOrderCode() {
         String prefix = "ORD";
         String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String random = String.valueOf((int) (Math.random() * 9000) + 1000); // 4 số ngẫu nhiên
-        return String.format("%s-%s-%s", prefix, date, random);
+
+
+        int randomNumber = 1000 + secureRandom.nextInt(9000);
+
+        return String.format("%s-%s-%s", prefix, date, randomNumber);
         // → ORD-20240601-4827
     }
 

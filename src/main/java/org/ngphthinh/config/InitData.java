@@ -66,8 +66,8 @@ public class InitData implements CommandLineRunner {
                 "Chất lượng sản phẩm tuyệt vời, " + faker.expression("#{options.option 'giao hàng rất nhanh','chủ shop nhiệt tình'} .")
         };
 
-        Random rand = new Random();
-        return templates[rand.nextInt(templates.length)];
+        int randomIndex = faker.random().nextInt(templates.length);
+        return templates[randomIndex];
     }
 
     private void initReview() {
@@ -85,7 +85,7 @@ public class InitData implements CommandLineRunner {
         // Set để kiểm tra trùng lặp UNIQUE(user_id, product_id) trong lúc loop
         Set<String> uniquePairs = new HashSet<>();
         List<Review> reviewsToSave = new ArrayList<>();
-        Random random = new Random();
+
 
 
         // 2. Duyệt qua các đơn hàng thành công để lấy cặp (User, Product) thực tế đã mua hàng
@@ -107,7 +107,7 @@ public class InitData implements CommandLineRunner {
                         Review review = Review.builder()
                                 .user(user)
                                 .product(product)
-                                .rating(random.nextInt(5) + 1) // Random số sao 1 - 5
+                                .rating(faker.random().nextInt(1,6)) // Random số sao 1 - 5
                                 .comment(fakeComment)
                                 .build();
                         reviewsToSave.add(review);

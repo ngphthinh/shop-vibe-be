@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.ngphthinh.dto.request.review.ReviewRequest;
+import org.ngphthinh.dto.response.PagingResponse;
 import org.ngphthinh.dto.response.review.ReviewResponse;
 import org.ngphthinh.entity.Product;
 import org.ngphthinh.entity.Review;
@@ -24,7 +25,13 @@ import org.ngphthinh.repository.ProductRepository;
 import org.ngphthinh.repository.ReviewRepository;
 import org.ngphthinh.repository.UserRepository;
 import org.ngphthinh.util.AppUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,7 +39,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ReviewServiceTest {
+class ReviewServiceTest {
 
     @Mock private ReviewRepository reviewRepository;
     @Mock private ReviewMapper reviewMapper;
@@ -153,7 +160,40 @@ public class ReviewServiceTest {
             verify(reviewMapper).updateReviewFromRequest(reviewRequest, mockReview);
         }
     }
+    @Test
+    void getReviewsByProductId_shouldReturnPagingResponse_whenReviewsExist() {
+        // 1. SETUP DATA & MOCKS
+        Long productId = 101L;
+        Pageable pageable = PageRequest.of(0, 5); // Trang 0, kích thước 5 phần tử
 
+        Review mockReview = new Review();
+        ReviewResponse mockResponse = new ReviewResponse();
+
+        List<Review> reviewList = Collections.singletonList(mockReview);
+
+        // Sử dụng PageImpl thực tế để bọc danh sách dữ liệu mẫu
+        Page<Review> reviewPage = new PageImpl<>(reviewList, pageable, 1);
+
+        // Giả lập hành vi cho Repository và Mapper
+        when(reviewRepository.findByProductId(productId, pageable)).thenReturn(reviewPage);
+        when(reviewMapper.toReviewResponse(mockReview)).thenReturn(mockResponse);
+
+        // 2. ACT
+        PagingResponse<ReviewResponse> actualResponse = reviewService.getReviewsByProductId(productId, pageable);
+
+        // 3. ASSERT (Kiểm tra trọn vẹn tất cả thông số map vào PagingResponse)
+        assertNotNull(actualResponse);
+        assertEquals(1, actualResponse.getContent().size());
+        assertEquals(0, actualResponse.getPage());
+        assertEquals(5, actualResponse.getSize());
+        assertTrue(actualResponse.isLast());
+        assertEquals(1, actualResponse.getTotalElements());
+        assertEquals(1, actualResponse.getTotalPages());
+
+        // 4. VERIFY (Xác nhận luồng gọi dependency chính xác)
+        verify(reviewRepository, times(1)).findByProductId(productId, pageable);
+        verify(reviewMapper, times(1)).toReviewResponse(mockReview);
+    }
     @Test
     void updateReview_notOwner_shouldThrowForbiddenException() {
         try (MockedStatic<AppUtil> utilities = mockStatic(AppUtil.class)) {

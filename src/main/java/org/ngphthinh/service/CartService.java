@@ -95,7 +95,7 @@ public class CartService {
         }
 
         if (cartItem.getProduct().getStockQuantity() < request.getQuantity()) {
-            throw new InsufficientStockException();
+            throw new InsufficientStockException("name", cartItem.getProduct().getName(), "availableStock", cartItem.getProduct().getStockQuantity());
         }
 
         cartItem.setQuantity(request.getQuantity());

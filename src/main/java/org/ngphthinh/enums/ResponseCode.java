@@ -48,9 +48,12 @@ public enum ResponseCode {
     USER_UPDATED_SUCCESSFULLY(7001, "Successfully updated user information"),
     USERS_RETRIEVED_SUCCESSFULLY(7002, "Successfully retrieved users"),
     USER_LOCKED_SUCCESSFULLY(7003, "Successfully locked user account"),
-    USER_UNLOCKED_SUCCESSFULLY(7004, "Successfully unlocked user account")
-
-     ;
+    USER_UNLOCKED_SUCCESSFULLY(7004, "Successfully unlocked user account"),
+    STATISTICS_REVENUE_SUCCESS(8000, "Successfully retrieved revenue statistics"),
+    STATISTICS_TOP_PRODUCTS_SUCCESS(8001, "Successfully retrieved top products statistics"),
+    STATISTICS_TOP_CUSTOMERS_SUCCESS(8002, "Successfully retrieved top customers statistics"),
+    STATISTICS_OVERVIEW_SUCCESS(8003, "Successfully retrieved overview statistics")
+    ;
 
     private final int code;
     private final String message;
