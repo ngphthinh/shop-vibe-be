@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -71,9 +72,9 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public PagingResponse<ProductResponse> getProductsByCategoryId(String keyword, int page, int size, String sort) {
+    public PagingResponse<ProductResponse> searchProducts(String keyword, Long categoryId, int page, int size, String sort) {
         Pageable pageable = AppUtil.buildPageable(page, size, sort);
-        Page<ProductProjection> productPage = productRepository.findProductsByKeyword(keyword, pageable);
+        Page<ProductProjection> productPage = productRepository.findProductsByKeyword(keyword, categoryId, pageable);
 
         return getProductResponsePagingResponse(productPage);
     }
@@ -149,8 +150,25 @@ public class ProductService {
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         product.setIsDeleted(true);
+        List<ProductImage> productImages = productImageRepository.findByProductId(id);
+        for (ProductImage img : productImages) {
+            productImageAsyncService.deleteImage(img.getPublicId());
+        }
         productRepository.save(product);
     }
+
+
+
+    @Transactional
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @CacheEvict(value = "products", allEntries = true)
+    public void  deleteProductImageByProductId (Long productId) {
+        List<ProductImage> productImages = productImageRepository.findByProductId(productId);
+        for (ProductImage img : productImages) {
+            productImageAsyncService.deleteImage(img.getPublicId());
+        }
+    }
+
 
     @Transactional
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -177,6 +195,10 @@ public class ProductService {
             }
         }
 
+        ProductImage productImage = productImageRepository.findById(imgId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_IMAGE_NOT_FOUND));
+        productImageAsyncService.deleteImage(productImage.getPublicId());
+
         productImageRepository.deleteById(imgId);
     }
 
@@ -193,10 +215,16 @@ public class ProductService {
 
         List<byte[]> bytesImg = buildImageBytes(imageBytesList);
 
-        // 1. Kích hoạt upload song song tất cả các ảnh cùng một lúc
-        List<CompletableFuture<ProductImage>> futures = bytesImg.stream()
-                .map(bytes -> productImageAsyncService.uploadSingleImage(bytes, productId))
-                .toList();
+        List<CompletableFuture<ProductImage>> futures =
+                IntStream.range(0, bytesImg.size())
+                        .mapToObj(i ->
+                                productImageAsyncService.uploadSingleImage(
+                                        bytesImg.get(i),
+                                        productId,
+                                        i == 0
+                                )
+                        )
+                        .toList();
 
         // 2. Chờ cho đến khi TẤT CẢ các ảnh được upload và lưu DB thành công
         CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));

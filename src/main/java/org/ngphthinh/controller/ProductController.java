@@ -1,6 +1,5 @@
 package org.ngphthinh.controller;
 
-import jakarta.servlet.annotation.HttpConstraint;
 import lombok.RequiredArgsConstructor;
 import org.ngphthinh.dto.request.product.ProductCreateRequest;
 import org.ngphthinh.dto.request.product.ProductUpdateRequest;
@@ -11,8 +10,6 @@ import org.ngphthinh.dto.response.product.ProductImageResponse;
 import org.ngphthinh.dto.response.product.ProductResponse;
 import org.ngphthinh.enums.ResponseCode;
 import org.ngphthinh.service.ProductService;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,13 +36,14 @@ public class ProductController {
 
     @GetMapping("/search")
     public ApiResponse<PagingResponse<ProductResponse>> searchProducts(@RequestParam String keyword,
+                                                                       @RequestParam Long categoryId,
                                                                        @RequestParam(defaultValue = "0") int page,
                                                                        @RequestParam(defaultValue = "10") int size,
                                                                        @RequestParam(defaultValue = "newest") String sort) {
         return ApiResponse.<PagingResponse<ProductResponse>>builder()
                 .code(ResponseCode.PRODUCT_GET_SUCCESS.getCode())
                 .message(ResponseCode.PRODUCT_GET_SUCCESS.getMessage())
-                .data(productService.getProductsByCategoryId(keyword, page, size, sort))
+                .data(productService.searchProducts(keyword, categoryId, page, size, sort))
                 .build();
     }
 
@@ -99,5 +97,11 @@ public class ProductController {
                 .message(ResponseCode.PRODUCT_UPDATE_SUCCESS.getMessage())
                 .data(productService.saveProductImages(images, productId))
                 .build();
+    }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{id}/images")
+    public void deleteAllProductImages(@PathVariable("id") Long productId) {
+        productService.deleteProductImageByProductId(productId);
     }
 }

@@ -38,5 +38,7 @@ public interface OrderProjection {
 
     LocalDateTime getCreatedAt();
 
+    String getCustomerName  ();
+
     Long getItemCount();
 }

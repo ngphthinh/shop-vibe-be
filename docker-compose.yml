@@ -31,7 +31,7 @@ services: #define containers
 
   backend:
     build: . #build the image from the Dockerfile in the current directory
-    image: ngphthinh/shop-vibe:1.0.0
+#    image: ngphthinh/shop-vibe-test:1.0.0
     ports:
       - "8080:8080"  #map port 8080 of the container to port 8080 of the host machine
     env_file: .env #load environment variables from the .env file

@@ -1,5 +1,6 @@
 package org.ngphthinh.mapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mapstruct.Mapper;
 import org.ngphthinh.dto.response.cart.CartItemResponse;
 import org.ngphthinh.dto.response.cart.CartResponse;

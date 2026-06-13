@@ -70,12 +70,13 @@ public class OrderController {
     public ApiResponse<PagingResponse<OrderResponse>> getAllOrders(@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
                                                                    @RequestParam(required = false) String status,
                                                                    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate from,
-                                                                   @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate to
+                                                                   @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate to,
+                                                                   @RequestParam String keyword
     ) {
         return ApiResponse.<PagingResponse<OrderResponse>>builder()
                 .code(ResponseCode.ORDER_GET_SUCCESS.getCode())
                 .message(ResponseCode.ORDER_GET_SUCCESS.getMessage())
-                .data(orderService.getAllOrders(pageable, status, from, to))
+                .data(orderService.getAllOrders(pageable, status, from, to, keyword))
                 .build();
     }
 
@@ -85,6 +86,14 @@ public class OrderController {
                 .code(ResponseCode.ORDER_STATUS_UPDATE_SUCCESS.getCode())
                 .message(ResponseCode.ORDER_STATUS_UPDATE_SUCCESS.getMessage())
                 .data(orderService.updateOrderStatus(id, status))
+                .build();
+    }
+    @GetMapping("/admin/{id}")
+    public ApiResponse<OrderResponse> getAdminOrderById(@PathVariable Long id) {
+        return ApiResponse.<OrderResponse>builder()
+                .code(ResponseCode.ORDER_GET_BY_ID_SUCCESS.getCode())
+                .message(ResponseCode.ORDER_GET_BY_ID_SUCCESS.getMessage())
+                .data(orderService.getOrderByIdWithRoleAdmin(id))
                 .build();
     }
 }

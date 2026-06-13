@@ -23,6 +23,7 @@ import org.ngphthinh.exception.auth.DuplicateEmailException;
 import org.ngphthinh.exception.auth.TokenExpiredException;
 import org.ngphthinh.mapper.UserMapper;
 import org.ngphthinh.repository.UserRepository;
+import org.ngphthinh.util.AppUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -154,9 +155,10 @@ public class AuthenticationService {
 
 
     @Transactional
-    @PreAuthorize("#request.email == authentication.name")
+    @PreAuthorize("hasRole('ROLE_USER')")
     public UserChangePasswordResponse changePassword(UserChangePasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        String email = AppUtil.emailFromAuthentication();
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
@@ -167,7 +169,7 @@ public class AuthenticationService {
         userRepository.save(user);
 
         long currentTime = new Date().toInstant().getEpochSecond();
-        changePasswordService.saveTokenInvalidationTimestamp(request.getEmail(), String.valueOf(currentTime));
+        changePasswordService.saveTokenInvalidationTimestamp(email, String.valueOf(currentTime));
 
         return UserChangePasswordResponse.builder()
                 .success(true)

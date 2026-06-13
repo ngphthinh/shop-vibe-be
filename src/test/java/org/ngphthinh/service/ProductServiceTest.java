@@ -72,44 +72,55 @@ class ProductServiceTest {
 
     @Test
     void getProductsByCategoryId_shouldReturnPagingResponse_whenDataExists() {
-        // 1. SETUP DATA & MOCKS
         String keyword = "laptop";
         int page = 0;
         int size = 10;
         String sort = "id:desc";
 
-        // Mock ProductProjection và ProductResponse mẫu
         ProductProjection projectionMock = mock(ProductProjection.class);
-        ProductResponse responseMock = new ProductResponse(); // Hoặc dùng Builder nếu có
+        ProductResponse responseMock = new ProductResponse();
 
-        List<ProductProjection> projections = Collections.singletonList(projectionMock);
+        List<ProductProjection> projections =
+                Collections.singletonList(projectionMock);
 
-        // Tạo một đối tượng Page thực tế chứa dữ liệu giả lập để không cần mock các hàm bổ trợ của Page
-        Page<ProductProjection> productPage = new PageImpl<>(projections, Pageable.ofSize(size), 1);
+        Page<ProductProjection> productPage =
+                new PageImpl<>(projections, Pageable.ofSize(size), 1);
 
-        // Giả lập hành vi của Repository và Mapper
-        when(productRepository.findProductsByKeyword(eq(keyword), any(Pageable.class)))
-                .thenReturn(productPage);
+        when(productRepository.findProductsByKeyword(
+                eq(keyword),
+                isNull(),
+                any(Pageable.class)
+        )).thenReturn(productPage);
 
         when(productMapper.toProductResponse(any(ProductProjection.class)))
                 .thenReturn(responseMock);
 
-        // 2. ACT
         PagingResponse<ProductResponse> actualResponse =
-                productService.getProductsByCategoryId(keyword, page, size, sort);
+                productService.searchProducts(
+                        keyword,
+                        null,
+                        page,
+                        size,
+                        sort
+                );
 
-        // 3. ASSERT (Kiểm tra tính chính xác của dữ liệu và các chỉ số phân trang)
         assertNotNull(actualResponse);
         assertEquals(1, actualResponse.getContent().size());
         assertEquals(size, actualResponse.getSize());
         assertEquals(1, actualResponse.getTotalElements());
         assertEquals(0, actualResponse.getPage());
-        assertTrue(actualResponse.isLast()); // Vì chỉ có 1 phần tử nên page 0 cũng là page cuối
+        assertTrue(actualResponse.isLast());
         assertEquals(1, actualResponse.getTotalPages());
 
-        // 4. VERIFY (Xác nhận các hàm phụ thuộc được gọi đúng số lần)
-        verify(productRepository, times(1)).findProductsByKeyword(eq(keyword), any(Pageable.class));
-        verify(productMapper, times(1)).toProductResponse(any(ProductProjection.class));
+        verify(productRepository, times(1))
+                .findProductsByKeyword(
+                        eq(keyword),
+                        isNull(),
+                        any(Pageable.class)
+                );
+
+        verify(productMapper, times(1))
+                .toProductResponse(any(ProductProjection.class));
     }
 
     @Test
@@ -380,7 +391,9 @@ class ProductServiceTest {
                 .thenReturn(Collections.singletonList(nextImage));
         when(productImageRepository.save(nextImage)).thenReturn(nextImage);
 
-        // Chạy hàm
+        when(productImageRepository.findById(imgId)).thenReturn(Optional.of(new ProductImage()));
+
+          // Chạy hàm
         assertDoesNotThrow(() -> productService.deleteProductImage(productId, imgId));
 
         // Kiểm tra xem ảnh phụ đã được chuyển thành ảnh chính chưa
@@ -430,7 +443,7 @@ class ProductServiceTest {
         when(productRepository.existsByIdAndIsDeletedFalse(productId)).thenReturn(true);
 
         // Giả lập tính năng xử lý song song trả về các CompletableFuture hoàn thành thành công
-        when(productImageAsyncService.uploadSingleImage(any(byte[].class), eq(productId)))
+        when(productImageAsyncService.uploadSingleImage(any(byte[].class), eq(productId), anyBoolean()))
                 .thenReturn(CompletableFuture.completedFuture(imgResult1))
                 .thenReturn(CompletableFuture.completedFuture(imgResult2));
 
@@ -443,7 +456,7 @@ class ProductServiceTest {
         // Kiểm tra kết quả gom dữ liệu sau bất đồng bộ
         assertNotNull(responses);
         assertEquals(2, responses.size());
-        verify(productImageAsyncService, times(2)).uploadSingleImage(any(byte[].class), eq(productId));
+        verify(productImageAsyncService, times(2)).uploadSingleImage(any(byte[].class), eq(productId), anyBoolean());
     }
 
     @Test
@@ -458,7 +471,7 @@ class ProductServiceTest {
         CompletableFuture<ProductImage> failedFuture = new CompletableFuture<>();
         failedFuture.completeExceptionally(new RuntimeException("Cloudinary upload error"));
 
-        when(productImageAsyncService.uploadSingleImage(any(byte[].class), eq(productId)))
+        when(productImageAsyncService.uploadSingleImage(any(byte[].class), eq(productId), anyBoolean()))
                 .thenReturn(failedFuture);
 
         // Đoạn code logic get() sẽ ném ra ExecutionException, và hàm của bạn bọc lại thành IMAGE_UPLOAD_FAILED

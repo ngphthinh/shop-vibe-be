@@ -27,13 +27,13 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
                    p.name AS productName,
                    p.price AS productPrice,
                    (SELECT pi.imageUrl FROM ProductImage pi
-                   WHERE pi.product.id = p.id AND pi.isPrimary = true) AS productImageUrl
+                   WHERE pi.product.id = p.id AND pi.isPrimary = true) AS productPrimaryImageUrl
             FROM Cart c
             JOIN c.items ci
             JOIN ci.product p
             WHERE c.user.email = :email and p.isDeleted = false
             """)
-    List<CartProjection> findByUserEmail(String email);
+    List<CartProjection>    findByUserEmail(String email);
 
 
 

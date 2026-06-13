@@ -22,6 +22,8 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
 
     List<ProductImage> findByIdAndProductIdAndIsPrimaryFalse(Long id, Long productId);
 
+    List<ProductImage> findByProductId(Long productId);
+
 
     List<ProductImage> findByProductIdAndIsPrimaryFalseAndIdNot(Long productId, Long id);
 

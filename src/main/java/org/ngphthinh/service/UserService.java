@@ -54,6 +54,8 @@ public class UserService {
     public PagingResponse<UserResponse> getAllUsers(Pageable pageable) {
         Page<User> userPage = userRepository.findAll(pageable);
 
+        userPage.forEach(e-> System.out.println(e.getCreatedAt()));
+
         return PagingResponse.<UserResponse>builder()
                 .page(userPage.getNumber())
                 .size(userPage.getSize())

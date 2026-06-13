@@ -1,6 +1,7 @@
 package org.ngphthinh.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.ngphthinh.dto.request.order.OrderCreateRequest;
 import org.ngphthinh.dto.response.order.OrderItemResponse;
 import org.ngphthinh.dto.response.order.OrderResponse;
@@ -17,9 +18,8 @@ import java.util.stream.Collectors;
 public interface OrderMapper {
 
     Order toOrder(OrderCreateRequest request);
-
+    @Mapping(target = "customerName", source = "user.fullName")
     OrderResponse toOrderResponse(Order order);
-
 
     default List<OrderResponse> mapToOrderResponses(List<OrderProjection> flatList) {
         if (flatList == null || flatList.isEmpty()) {
@@ -35,6 +35,7 @@ public interface OrderMapper {
             response.setShippingAddress(projection.getShippingAddress());
             response.setNote(projection.getNote());
             response.setItemCount(projection.getItemCount());
+            response.setCustomerName( projection.getCustomerName() != null ? projection.getCustomerName() :null);
             response.setCreatedAt(projection.getCreatedAt());
 
             PaymentResponse paymentResponse = new PaymentResponse();

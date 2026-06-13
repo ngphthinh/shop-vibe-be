@@ -14,10 +14,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Request object for changing user password")
 public class UserChangePasswordRequest {
 
-    @Schema(description = "Email of the user", example = "john.doe@example.com")
-    @NotBlank(message = "Email is required")
-    private String email;
-
     @Schema(description = "Current password of the user", example = "currentPassword123")
     private String oldPassword;
 

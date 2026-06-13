@@ -89,15 +89,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                            o.totalAmount as totalAmount,
                            o.shippingAddress as shippingAddress,
                            o.note as note,
+                           u.fullName as customerName,
                            o.payment.status as paymentStatus,
                            o.payment.method as paymentMethod,
                            o.createdAt as createdAt,
                            (SELECT COUNT(oi.id) FROM OrderItem oi WHERE oi.order.id = o.id) as itemCount
                     FROM Order o
+                    JOIN o.user u
                     WHERE
                        (:status IS NULL OR o.status = :status)
                         AND o.createdAt >= :createdAtAfter
                         AND o.createdAt <= :createdAtBefore
+                        AND (lower(u.fullName) like lower(concat('%', :keyword, '%')) OR lower(o.orderCode) like lower(concat('%', :keyword, '%')))
                     """,
             countQuery = """
                     SELECT COUNT(o.id)
@@ -108,7 +111,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         AND o.createdAt <= :createdAtBefore
                     """
     )
-    Page<OrderProjection> findByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime createdAtAfter, LocalDateTime createdAtBefore, Pageable pageable);
+    Page<OrderProjection> findByStatusAndCreatedAtBetweenAndCustomerNameContaining(OrderStatus status, LocalDateTime createdAtAfter, LocalDateTime createdAtBefore, String keyword, Pageable pageable);
 
     List<Order> findByStatusAndUserIdIn(OrderStatus status, Collection<Long> userIds);
 
@@ -145,9 +148,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("""
                 SELECT
-                    COUNT(DISTINCT o.id) AS totalOrders,
-                    SUM(o.totalAmount) AS totalRevenue,
-                    COUNT(DISTINCT o.user.id) AS activeCustomers
+                    COUNT(DISTINCT o.id) AS orders,
+                    SUM(o.totalAmount) AS revenue,
+                    COUNT(DISTINCT o.user.id) AS newCustomers
                 FROM Order o
                 WHERE o.createdAt BETWEEN :from AND :to
             """)
@@ -174,5 +177,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 FROM Order o
             """)
     AllTimeStatsProjection findAllTimeStats();
+
+    @Query("""
+            SELECT o
+            FROM Order o
+            JOIN FETCH o.items oi
+            JOIN FETCH o.payment
+            JOIN FETCH o.user
+            JOIN FETCH oi.product
+            WHERE o.id =:id
+            """)
+    Optional<Order> findOrderById(Long id);
 }
 

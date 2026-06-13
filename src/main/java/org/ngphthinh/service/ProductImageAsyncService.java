@@ -33,7 +33,7 @@ public class ProductImageAsyncService {
     private final ProductRepository productRepository;
 
     @Async("taskExecutor") // Cấu hình một ThreadPool riêng cho tác vụ upload ảnh
-    public CompletableFuture<ProductImage> uploadSingleImage(byte[] imageBytes, Long productId) {
+    public CompletableFuture<ProductImage> uploadSingleImage(byte[] imageBytes, Long productId,boolean isPrimary) {
         Map<?, ?> uploadParams = ObjectUtils.asMap(
                 "folder", "shop-vibe",
                 "transformation", new Transformation<>().width(640).height(480).crop("fill").gravity("auto")
@@ -50,6 +50,7 @@ public class ProductImageAsyncService {
                     .imageUrl(uploadResult.get(SECURE_URL).toString())
                     .publicId(uploadResult.get(PUBLIC_ID).toString())
                     .product(product)
+                    .isPrimary(isPrimary)
                     .build();
 
             // 3. Lưu vào DB và trả về kết quả thành công trong Future

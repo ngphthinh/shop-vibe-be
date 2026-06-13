@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.ngphthinh.dto.request.user.*;
 import org.ngphthinh.dto.response.user.AuthenticateResponse;
@@ -22,6 +24,7 @@ import org.ngphthinh.exception.auth.DuplicateEmailException;
 import org.ngphthinh.exception.auth.TokenExpiredException;
 import org.ngphthinh.mapper.UserMapper;
 import org.ngphthinh.repository.UserRepository;
+import org.ngphthinh.util.AppUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.text.ParseException;
@@ -202,6 +205,7 @@ class AuthServiceTest {
 
         verify(jwtService, never()).generateAccessToken(any());
     }
+
     @Test
     void login_lockAccountAfter5FailedAttempts() {
         // 1. SETUP (Chuẩn bị các Mock hành vi có trả về giá trị)
@@ -228,6 +232,7 @@ class AuthServiceTest {
         // Kiểm tra hàm reset số lần fail ĐƯỢC GỌI đúng 1 lần (khớp với logic code thực tế của bạn)
         verify(userClockerService, times(1)).resetFailedAttempts("test@gmail.com");
     }
+
     @Test
     void refreshToken_success() {
 
@@ -259,57 +264,62 @@ class AuthServiceTest {
 
         assertThrows(TokenExpiredException.class, () -> authService.refreshToken(refreshTokenRequest));
     }
+
     @Test
     void changePassword_shouldSuccess_whenDataIsValid() {
         // 1. SETUP
-        UserChangePasswordRequest request = new UserChangePasswordRequest();
-        request.setEmail("test@gmail.com");
-        request.setOldPassword("oldPass");
-        request.setNewPassword("newPass");
+        try (MockedStatic<AppUtil> mockedAppUtil = Mockito.mockStatic(AppUtil.class)) {
+            mockedAppUtil.when(AppUtil::emailFromAuthentication).thenReturn("test@gmail.com");
+            UserChangePasswordRequest request = new UserChangePasswordRequest();
+            request.setOldPassword("oldPass");
+            request.setNewPassword("newPass");
 
-        User user = new User();
-        user.setEmail("test@gmail.com");
-        user.setPassword("encodedOldPass");
+            User user = new User();
+            user.setEmail("test@gmail.com");
+            user.setPassword("encodedOldPass");
 
-        when(userRepository.findByEmail("test@gmail.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("oldPass", "encodedOldPass")).thenReturn(true);
-        when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
-        when(userRepository.save(user)).thenReturn(user);
+            when(userRepository.findByEmail("test@gmail.com")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("oldPass", "encodedOldPass")).thenReturn(true);
+            when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
+            when(userRepository.save(user)).thenReturn(user);
 
-        // Mock hàm void lưu timestamp invalided token
-        doNothing().when(changePasswordService).saveTokenInvalidationTimestamp(eq("test@gmail.com"), anyString());
+            // Mock hàm void lưu timestamp invalided token
+            doNothing().when(changePasswordService).saveTokenInvalidationTimestamp(eq("test@gmail.com"), anyString());
 
-        // 2. ACT
-        UserChangePasswordResponse response = authService.changePassword(request);
+            // 2. ACT
+            UserChangePasswordResponse response = authService.changePassword(request);
 
-        // 3. ASSERT & VERIFY
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
+            // 3. ASSERT & VERIFY
+            assertNotNull(response);
+            assertTrue(response.isSuccess());
 
-        verify(userRepository).save(user);
-        verify(changePasswordService).saveTokenInvalidationTimestamp(eq("test@gmail.com"), anyString());
+            verify(userRepository).save(user);
+            verify(changePasswordService).saveTokenInvalidationTimestamp(eq("test@gmail.com"), anyString());
+        }
     }
 
     @Test
     void changePassword_shouldThrowBadCredentialsException_whenOldPasswordDoesNotMatch() {
         // 1. SETUP
-        UserChangePasswordRequest request = new UserChangePasswordRequest();
-        request.setEmail("test@gmail.com");
-        request.setOldPassword("wrongOldPass");
+        try (MockedStatic<AppUtil> mockedAppUtil = Mockito.mockStatic(AppUtil.class)) {
+            mockedAppUtil.when(AppUtil::emailFromAuthentication).thenReturn("test@gmail.com");
+            UserChangePasswordRequest request = new UserChangePasswordRequest();
+            request.setOldPassword("wrongOldPass");
 
-        User user = new User();
-        user.setPassword("encodedOldPass");
+            User user = new User();
+            user.setPassword("encodedOldPass");
 
-        when(userRepository.findByEmail("test@gmail.com")).thenReturn(Optional.of(user));
-        // Ép trả về false khi khớp mật khẩu cũ
-        when(passwordEncoder.matches("wrongOldPass", "encodedOldPass")).thenReturn(false);
+            when(userRepository.findByEmail("test@gmail.com")).thenReturn(Optional.of(user));
+            // Ép trả về false khi khớp mật khẩu cũ
+            when(passwordEncoder.matches("wrongOldPass", "encodedOldPass")).thenReturn(false);
 
-        // 2. ACT & ASSERT
-        assertThrows(BadCredentialsException.class, () -> authService.changePassword(request));
+            // 2. ACT & ASSERT
+            assertThrows(BadCredentialsException.class, () -> authService.changePassword(request));
 
-        // 3. VERIFY (Mật khẩu sai thì tuyệt đối không lưu hay thay đổi gì cả)
-        verify(userRepository, never()).save(any(User.class));
-        verify(changePasswordService, never()).saveTokenInvalidationTimestamp(anyString(), anyString());
+            // 3. VERIFY (Mật khẩu sai thì tuyệt đối không lưu hay thay đổi gì cả)
+            verify(userRepository, never()).save(any(User.class));
+            verify(changePasswordService, never()).saveTokenInvalidationTimestamp(anyString(), anyString());
+        }
     }
 
     // ==========================================

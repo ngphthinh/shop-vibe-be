@@ -522,23 +522,24 @@ class OrderServiceTest {
         String statusStr = "DELIVERED";
         LocalDate from = LocalDate.of(2026, 6, 1);
         LocalDate to = LocalDate.of(2026, 6, 9);
+        String keyword = "John Doe"; // Dùng để verify cache
 
         OrderProjection mockProjection = mock(OrderProjection.class);
         Page<OrderProjection> ordersPage = new PageImpl<>(Collections.singletonList(mockProjection), pageable, 1);
         OrderResponse mockResponse = new OrderResponse();
 
         // Giả lập hành vi Repository và Mapper
-        when(orderRepository.findByStatusAndCreatedAtBetween(
+        when(orderRepository.findByStatusAndCreatedAtBetweenAndCustomerNameContaining(
                 eq(OrderStatus.DELIVERED),
                 eq(from.atStartOfDay()),
-                eq(to.atTime(LocalTime.MAX)),
+                eq(to.atTime(LocalTime.MAX)), eq(keyword),
                 eq(pageable)
         )).thenReturn(ordersPage);
 
         when(orderMapper.mapToOrderResponses(anyList())).thenReturn(Collections.singletonList(mockResponse));
 
         // 2. ACT
-        PagingResponse<OrderResponse> actualResponse = orderService.getAllOrders(pageable, statusStr, from, to);
+        PagingResponse<OrderResponse> actualResponse = orderService.getAllOrders(pageable, statusStr, from, to, keyword);
 
         // 3. ASSERT
         assertNotNull(actualResponse);
@@ -547,7 +548,7 @@ class OrderServiceTest {
         assertEquals(10, actualResponse.getSize());
 
         // 4. VERIFY
-        verify(orderRepository, times(1)).findByStatusAndCreatedAtBetween(any(), any(), any(), any());
+        verify(orderRepository, times(1)).findByStatusAndCreatedAtBetweenAndCustomerNameContaining(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -556,23 +557,25 @@ class OrderServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         LocalDate from = LocalDate.of(2026, 6, 1);
         LocalDate to = LocalDate.of(2026, 6, 9);
+        String keyword = "";
 
         Page<OrderProjection> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
         // Khi truyền vào "", biến orderStatus trong hàm phải gán bằng null
-        when(orderRepository.findByStatusAndCreatedAtBetween(
+        when(orderRepository.findByStatusAndCreatedAtBetweenAndCustomerNameContaining(
                 isNull(),
                 eq(from.atStartOfDay()),
                 eq(to.atTime(LocalTime.MAX)),
+                eq(keyword),
                 eq(pageable)
         )).thenReturn(emptyPage);
 
         // ACT (Truyền chuỗi rỗng "")
-        PagingResponse<OrderResponse> actualResponse = orderService.getAllOrders(pageable, "", from, to);
+        PagingResponse<OrderResponse> actualResponse = orderService.getAllOrders(pageable, "", from, to , keyword);
 
         // ASSERT & VERIFY (Xác nhận tham số truyền vào Repo đúng là null)
         assertNotNull(actualResponse);
-        verify(orderRepository).findByStatusAndCreatedAtBetween(isNull(), any(), any(), any());
+        verify(orderRepository).findByStatusAndCreatedAtBetweenAndCustomerNameContaining(isNull(), any(), any(), any(), any());
     }
 
     @Test
@@ -582,16 +585,17 @@ class OrderServiceTest {
         String invalidStatus = "COMPLETED_BUT_SAI_ENUM"; // Kích nổ IllegalArgumentException
         LocalDate from = LocalDate.of(2026, 6, 1);
         LocalDate to = LocalDate.of(2026, 6, 9);
+        String keyword = "John Doe";
 
         // 2. ACT & ASSERT (Bẫy đúng ngoại lệ ErrorCode.INVALID_ORDER_STATUS)
         AppException exception = assertThrows(AppException.class, () ->
-                orderService.getAllOrders(pageable, invalidStatus, from, to)
+                orderService.getAllOrders(pageable, invalidStatus, from, to, keyword)
         );
 
         assertEquals(ErrorCode.INVALID_ORDER_STATUS, exception.getErrorCode());
 
         // 3. VERIFY (Lỗi convert Enum xảy ra lập tức, Repo tuyệt đối không được gọi)
-        verify(orderRepository, never()).findByStatusAndCreatedAtBetween(any(), any(), any(), any());
+        verify(orderRepository, never()).findByStatusAndCreatedAtBetweenAndCustomerNameContaining(any(), any(), any(), any(), any());
         verify(orderMapper, never()).mapToOrderResponses(anyList());
     }
     @Test

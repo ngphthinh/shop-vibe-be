@@ -23,4 +23,6 @@ public class OrderResponse {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long itemCount;
     private LocalDateTime createdAt;
+    @JsonInclude  (JsonInclude.Include.NON_NULL)
+    private String customerName ;
 }

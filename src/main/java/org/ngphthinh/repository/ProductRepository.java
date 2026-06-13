@@ -1,5 +1,6 @@
 package org.ngphthinh.repository;
 
+import org.ngphthinh.entity.Category;
 import org.ngphthinh.entity.Product;
 import org.ngphthinh.repository.projection.ProductProjection;
 import org.ngphthinh.repository.projection.ProductRankItemProjection;
@@ -64,10 +65,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 
     @Query("""
-                SELECT 
-                    p.id AS id, 
-                    p.name AS name, 
-                    p.slug AS slug, 
+                SELECT
+                    p.id AS id,
+                    p.name AS name,
+                    p.slug AS slug,
                     p.description AS description, 
                     p.price AS price, 
                     p.stockQuantity AS stockQuantity, 
@@ -83,9 +84,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             
                 FROM Product p 
                 LEFT JOIN p.category c 
-                WHERE p.isDeleted = false and (lower(p.name) like lower(concat('%', :keyword, '%')) or lower(p.description) like lower(concat('%', :keyword, '%')))
+                WHERE p.isDeleted = false and (lower(p.name) like lower(concat('%', :keyword, '%')) or lower(p.description) like lower(concat('%', :keyword, '%'))) AND (:categoryId IS NULL OR p.category.id = :categoryId)
             """)
-    Page<ProductProjection> findProductsByKeyword(String keyword, Pageable pageable);
+    Page<ProductProjection> findProductsByKeyword(String keyword, Long categoryId, Pageable pageable);
 
     boolean existsByCategoryIdAndIsDeletedFalse(Long categoryId);
 

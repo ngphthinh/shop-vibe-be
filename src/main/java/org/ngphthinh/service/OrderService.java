@@ -198,7 +198,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public PagingResponse<OrderResponse> getAllOrders(Pageable pageable, String status, LocalDate from, LocalDate to) {
+    public PagingResponse<OrderResponse> getAllOrders(Pageable pageable, String status, LocalDate from, LocalDate to, String keyword) {
         OrderStatus orderStatus;
         if (status == null || status.isEmpty()) {
             orderStatus = null;
@@ -210,7 +210,7 @@ public class OrderService {
             }
         }
 
-        Page<OrderProjection> orders = orderRepository.findByStatusAndCreatedAtBetween(orderStatus, from.atStartOfDay(), to.atTime(LocalTime.MAX), pageable);
+        Page<OrderProjection> orders = orderRepository.findByStatusAndCreatedAtBetweenAndCustomerNameContaining(orderStatus, from.atStartOfDay(), to.atTime(LocalTime.MAX), keyword, pageable);
 
         return PagingResponse.<OrderResponse>builder()
                 .content(orderMapper.mapToOrderResponses(orders.getContent()))
@@ -241,9 +241,7 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        if (order.getStatus() == OrderStatus.CONFIRMED) {
-            throw new AppException(ErrorCode.ORDER_STATUS_UPDATE_FORBIDDEN);
-        }
+
 
         // 3. Parse và kiểm tra tính hợp lệ của Enum nhập vào
         OrderStatus newStatus;
@@ -277,5 +275,12 @@ public class OrderService {
         payment.setStatus(PaymentStatus.SUCCESS);
         payment.setPaidAt(LocalDateTime.now());
 
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public OrderResponse getOrderByIdWithRoleAdmin(Long id) {
+        Order order = orderRepository.findOrderById(id).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        return orderMapper.toOrderResponse(order);
     }
 }

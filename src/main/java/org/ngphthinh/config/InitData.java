@@ -241,6 +241,12 @@ public class InitData implements CommandLineRunner {
                 order.setCancelledAt(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 10)));
             }
 
+            // random createdAt trong khoảng 30 ngày gần đây
+            LocalDateTime createdAt = LocalDateTime.now().minusDays(faker.number().numberBetween(0, 30))
+                    .withHour(faker.number().numberBetween(0, 23))
+                    .withMinute(faker.number().numberBetween(0, 59))
+                    .withSecond(faker.number().numberBetween(0, 59));
+            order.setCreatedAt(createdAt);
             orderRepository.save(order);
         }
 
@@ -424,7 +430,7 @@ public class InitData implements CommandLineRunner {
 
 //        1 admin (admin1 admin (admin@shopvibe.vn), 9 user thường. Password: Test@12345@
 
-        List<Role> adminRole = List.of(roleRepository.findById(RoleName.ROLE_ADMIN.name()).orElseThrow());
+        List<Role> adminRole = List.of(roleRepository.getReferenceById(RoleName.ROLE_ADMIN.name()), roleRepository.getReferenceById(RoleName.ROLE_USER.name()));
 
         // Create admin user
         User adminUser = User.builder()
